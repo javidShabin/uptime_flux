@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { env } from "./config/env.js";        // ← ENV loader (from Zod)
 import mongoPlugin from "./plugins/db.js"; // ← MongoDB plugin
+import redisPlugin from "./plugins/redis.js"; // ← Redis plugin
 
 /**
  * Create Fastify server instance.
@@ -14,6 +15,7 @@ export async function createServer() {
 
   // --- Register Plugins ---
   await app.register(mongoPlugin);
+  await app.register(redisPlugin);
 
   /** Health check route */
   app.get("/health", async () => {
@@ -22,9 +24,9 @@ export async function createServer() {
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       env: env.NODE_ENV,
+      redis: app.redis.status,
     };
   });
-
   return app;
 }
 
