@@ -170,6 +170,33 @@ Check the server health status.
 curl http://localhost:3000/health
 ```
 
+### Test Job
+
+Enqueue a test monitoring job to the worker queue.
+
+**Endpoint:** `POST /test-job`
+
+**Response:**
+
+```json
+{
+  "ok": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/test-job
+```
+
+This endpoint adds a test job to the `monitor-run` queue with the following data:
+- `monitorId`: "123"
+- `url`: "https://google.com"
+- `timeout`: 5000
+
+The worker will process this job and perform an HTTP GET request to the specified URL.
+
 ## 📁 Project Structure
 
 ```
@@ -184,6 +211,8 @@ apps/api/
 │   │   ├── db.ts            # MongoDB connection plugin
 │   │   ├── jwt.ts           # JWT authentication plugin
 │   │   └── redis.ts         # Redis connection plugin
+│   ├── queues/              # BullMQ queue definitions
+│   │   └── index.ts         # Monitor queue setup
 │   ├── routes/              # API route handlers
 │   ├── utils/               # Utility functions
 │   ├── workers/             # Queue workers (BullMQ)

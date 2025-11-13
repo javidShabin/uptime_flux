@@ -25,9 +25,9 @@
 
 UptimeFlux is a comprehensive uptime monitoring solution built as a monorepo, consisting of:
 
-- **API** - Fast REST API built with Fastify
-- **Web** - Modern React frontend with Vite
-- **Worker** - Background job processor with BullMQ
+- **API** - Fast REST API built with Fastify (Port 3000)
+- **Web** - Modern React frontend with Vite (Port 5173)
+- **Worker** - Background job processor with BullMQ for monitoring tasks
 - **Shared Packages** - Reusable TypeScript packages
 
 ## 🏗 Architecture
@@ -108,7 +108,7 @@ Create `.env` files for each app. See the individual app README files for requir
 
 - **API**: See `apps/api/README.md` for environment variable requirements
 - **Web**: See `apps/web/README.md` for environment variable requirements
-- **Worker**: See `apps/worker/README.md` for environment variable requirements
+- **Worker**: See `apps/worker/README.md` for environment variable requirements (requires `REDIS_URL`)
 
 > ⚠️ **Important**: Never commit `.env` files to version control. Use `.env.example` files as templates.
 
@@ -144,9 +144,11 @@ UptimeFlux/
 │   │   └── README.md
 │   ├── worker/           # Background job processor
 │   │   ├── src/
-│   │   │   ├── queues/
-│   │   │   ├── processors/
-│   │   │   └── main.ts
+│   │   │   ├── queues/   # BullMQ queue definitions
+│   │   │   ├── processors/  # Job processors
+│   │   │   ├── utils/    # Utility functions
+│   │   │   └── main.ts   # Worker entry point
+│   │   └── README.md
 │   └── docs/             # Documentation
 ├── packages/
 │   ├── config/           # Shared config (ESLint, TypeScript)
@@ -215,6 +217,36 @@ docker-compose up -d
 # View logs
 docker-compose logs -f api
 ```
+
+## 📡 API Endpoints
+
+### Health Check
+
+Check the server health status.
+
+**Endpoint:** `GET /health`
+
+**Example:**
+
+```bash
+curl http://localhost:3000/health
+```
+
+### Test Job
+
+Enqueue a test monitoring job to the worker queue.
+
+**Endpoint:** `POST /test-job`
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/test-job
+```
+
+This endpoint adds a test job to the `monitor-run` queue. The worker will process it and perform an HTTP health check.
+
+For more details, see [API README](apps/api/README.md).
 
 ## 🔧 Configuration
 
