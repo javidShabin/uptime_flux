@@ -1,12 +1,8 @@
-# syntax=docker/dockerfile:1.6
-
-FROM node:20-alpine AS base
+FROM node:20-alpine
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --production
+COPY package.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install
 
 COPY . .
-
-CMD ["npm", "run", "start"]
-
+CMD ["pnpm", "tsx", "src/main.ts"]

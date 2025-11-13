@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import { env } from "./config/env.js";
 import mongoPlugin from "./plugins/db.js";
 import redisPlugin from "./plugins/redis.js";
+import { monitorQueue } from "./queues/index.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -21,6 +22,16 @@ export async function createServer() {
       env: env.NODE_ENV,
       redis: app.redis?.status || "unknown",
     };
+  });
+
+  app.post("/test-job", async () => {
+    await monitorQueue.add("test", {
+      monitorId: "123",
+      url: "https://google.com",
+      timeout: 5000,
+    });
+
+    return { ok: true };
   });
 
   return app;
