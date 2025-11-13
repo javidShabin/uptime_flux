@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import { env } from "./config/env.js";        // ← ENV loader (from Zod)
+import mongoPlugin from "./plugins/db.js"; // ← MongoDB plugin
 
 /**
  * Create Fastify server instance.
@@ -10,12 +12,16 @@ export async function createServer() {
     },
   });
 
+  // --- Register Plugins ---
+  await app.register(mongoPlugin);
+
   /** Health check route */
   app.get("/health", async () => {
     return {
       status: "ok",
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
+      env: env.NODE_ENV,
     };
   });
 
@@ -29,7 +35,7 @@ async function start() {
   const app = await createServer();
 
   try {
-    const port = Number(process.env.PORT) || 3000;
+    const port = Number(env.PORT) || 3000;
 
     await app.listen({
       port,
@@ -53,10 +59,8 @@ async function start() {
   process.on("SIGTERM", shutdown);
 }
 
-/** 
- * Detect if file was executed directly with: 
- *   node src/main.ts 
- *   tsx src/main.ts 
+/**
+ * Detect if file is executed directly
  */
 if (import.meta.url === new URL(`file://${process.argv[1]}`, import.meta.url).href) {
   start();
