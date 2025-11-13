@@ -1,0 +1,19 @@
+{
+  "name": "worker",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts"
+  },
+  "dependencies": {
+    "bullmq": "^5.31.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.3"
+  }
+}
+
