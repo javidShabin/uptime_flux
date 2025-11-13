@@ -81,25 +81,27 @@ Create a `.env` file in the `apps/api` directory:
 PORT=3000
 NODE_ENV=development
 
-# Database
-MONGO_URL=mongodb://localhost:27017/uptimeflux
+# Database (replace with your actual MongoDB connection string)
+MONGO_URL=mongodb://localhost:27017/your-database-name
 
-# Redis
+# Redis (replace with your actual Redis connection string)
 REDIS_URL=redis://localhost:6379
 
-# Security
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+# Security (use a strong, random secret in production)
+JWT_SECRET=replace-with-a-strong-random-secret-key
 ```
+
+> ⚠️ **Security Note**: Never commit `.env` files. Use strong, unique secrets in production.
 
 ### Environment Variables
 
 #### Required
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGO_URL` | MongoDB connection string | `mongodb://localhost:27017/uptimeflux` |
-| `REDIS_URL` | Redis connection string | `redis://localhost:6379` |
-| `JWT_SECRET` | Secret key for JWT signing | `your-secret-key` |
+| Variable | Description | Example Format |
+|----------|-------------|----------------|
+| `MONGO_URL` | MongoDB connection string | `mongodb://[host]:[port]/[database]` |
+| `REDIS_URL` | Redis connection string | `redis://[host]:[port]` |
+| `JWT_SECRET` | Secret key for JWT signing | `strong-random-string` |
 
 #### Optional
 

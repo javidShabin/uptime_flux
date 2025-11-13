@@ -104,16 +104,13 @@ pnpm install
 
 ### 3. Set up environment variables
 
-Create `.env` files for each app:
+Create `.env` files for each app. See the individual app README files for required environment variables:
 
-**`apps/api/.env`**
-```env
-PORT=3000
-NODE_ENV=development
-MONGO_URL=mongodb://localhost:27017/uptimeflux
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key-here
-```
+- **API**: See `apps/api/README.md` for environment variable requirements
+- **Web**: See `apps/web/README.md` for environment variable requirements
+- **Worker**: See `apps/worker/README.md` for environment variable requirements
+
+> ⚠️ **Important**: Never commit `.env` files to version control. Use `.env.example` files as templates.
 
 ### 4. Start development servers
 
