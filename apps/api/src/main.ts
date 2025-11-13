@@ -3,6 +3,7 @@ import { env } from "./config/env.js";
 import mongoPlugin from "./plugins/db.js";
 import redisPlugin from "./plugins/redis.js";
 import { monitorQueue } from "./queues/index.js";
+import jwtPlugin from "./plugins/jwt.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -12,6 +13,7 @@ export async function createServer() {
   // --- Register Plugins FIRST ---
   await app.register(mongoPlugin);
   await app.register(redisPlugin);
+  await app.register(jwtPlugin);
 
   // --- THEN Register Routes ---
   app.get("/health", async () => {
