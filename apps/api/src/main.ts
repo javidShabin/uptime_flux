@@ -4,10 +4,12 @@ import mongoPlugin from "./plugins/db.js";
 import redisPlugin from "./plugins/redis.js";
 import { monitorQueue } from "./queues/index.js";
 import jwtPlugin from "./plugins/jwt.js";
+import authenticationRoutes from "./modules/authentication/auth.routes.js";
 
 export async function createServer() {
   const app = Fastify({
     logger: { level: "info" },
+    bodyLimit: 1048576, // 1MB
   });
 
   // --- Register Plugins FIRST ---
@@ -35,6 +37,9 @@ export async function createServer() {
 
     return { ok: true };
   });
+
+  // Register authentication routes
+  await app.register(authenticationRoutes, { prefix: "/auth" });
 
   return app;
 }
