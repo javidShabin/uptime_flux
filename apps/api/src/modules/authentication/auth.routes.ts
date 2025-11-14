@@ -10,4 +10,5 @@ export default async function authenticationRoutes(app: FastifyInstance) {
     const controller = new AuthenticationController(service);
   
     app.post("/register", controller.register);
+    app.post("/verify-otp", controller.verifyOtp);
   }

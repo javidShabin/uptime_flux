@@ -15,12 +15,12 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   OTP_EXPIRATION_MINUTES: z.coerce.number().int().min(1).max(30).default(10),
   OTP_RESEND_INTERVAL_SECONDS: z.coerce.number().int().min(30).max(300).default(60),
-  SMTP_HOST: z.string().min(1, "SMTP_HOST is required"),
+  SMTP_HOST: z.string().optional().default(""),
   SMTP_PORT: z.coerce.number().int().default(587),
   SMTP_SECURE: z.coerce.boolean().default(false),
-  SMTP_USER: z.string().min(1, "SMTP_USER is required"),
-  SMTP_PASS: z.string().min(1, "SMTP_PASS is required"),
-  SMTP_FROM: z.string().min(1, "SMTP_FROM is required"),
+  SMTP_USER: z.string().optional().default(""),
+  SMTP_PASS: z.string().optional().default(""),
+  SMTP_FROM: z.string().optional().default("UptimeFlux <noreply@uptimeflux.com>"),
 });
 
 const parsed = envSchema.safeParse(process.env);

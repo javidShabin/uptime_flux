@@ -28,9 +28,12 @@ import {
                 message: error.message,
             });
         } else {
+            // Log the full error for debugging
+            console.error("❌ Unhandled error:", error);
             request.log.error(error);
             reply.code(500).send({
                 message: "Internal server error",
+                error: process.env.NODE_ENV === "development" ? String(error) : undefined,
             });
         }
     }
@@ -40,6 +43,16 @@ import {
             const result = await this.authService.register(request.server, payload);
             reply.code(201).send(result);
         }catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
+
+    verifyOtp = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const payload = verifyOtpSchema.parse(request.body);
+            const result = await this.authService.verifyOtp(request.server, payload);
+            reply.code(200).send(result);
+        } catch (error) {
             this.handleError(error, request, reply);
         }
     }
