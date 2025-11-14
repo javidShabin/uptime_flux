@@ -211,4 +211,71 @@ export class AuthenticationService {
       },
     };
   }
+
+  async resendOtp(app: FastifyInstance, payload: ResendOtpInput) {
+    const email = payload.email.toLowerCase();
+
+    // Find pending registration
+    const pendingRegistration = await PendingRegistrationModel.findOne({ email });
+    if (!pendingRegistration) {
+      throw new AuthError(404, "No pending registration found. Please sign up again.");
+    }
+
+    // Check resend interval - prevent spam
+    const timeSinceLastUpdate = Date.now() - pendingRegistration.updatedAt.getTime();
+    const resendIntervalMs = env.OTP_RESEND_INTERVAL_SECONDS * 1000;
+    
+    if (timeSinceLastUpdate < resendIntervalMs) {
+      const remainingSeconds = Math.ceil((resendIntervalMs - timeSinceLastUpdate) / 1000);
+      throw new AuthError(429, `Please wait ${remainingSeconds} seconds before requesting a new code.`);
+    }
+
+    // Generate new OTP
+    const code = crypto.randomInt(100000, 999999).toString();
+    const codeHash = crypto.createHash("sha256").update(code).digest("hex");
+    const expiresAt = new Date(Date.now() + env.OTP_EXPIRATION_MINUTES * 60 * 1000);
+
+    // Update pending registration with new OTP
+    pendingRegistration.otpCodeHash = codeHash;
+    pendingRegistration.otpExpiresAt = expiresAt;
+    await pendingRegistration.save();
+
+    // Send new OTP email
+    try {
+      await this.emailService.sendOtp(email, code);
+    } catch (error) {
+      console.error("❌ Failed to send OTP email:", error);
+      throw new AuthError(500, `Failed to send verification email: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    return {
+      message: "Verification code resent to email",
+    };
+  }
+
+  async logout(app: FastifyInstance, refreshToken: string, userId: string) {
+    // Find user
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw new AuthError(404, "User not found");
+    }
+
+    // Hash the refresh token to find it in the database
+    const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+
+    // Find and revoke the refresh token
+    const tokenIndex = user.refreshTokens.findIndex(
+      (token) => token.tokenHash === refreshTokenHash && !token.revokedAt
+    );
+
+    if (tokenIndex !== -1) {
+      // Mark token as revoked
+      user.refreshTokens[tokenIndex].revokedAt = new Date();
+      await user.save();
+    }
+
+    return {
+      message: "Logged out successfully",
+    };
+  }
 }
