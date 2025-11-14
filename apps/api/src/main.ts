@@ -2,15 +2,20 @@ import Fastify from "fastify";
 import { env } from "./config/env.js";
 import mongoPlugin from "./plugins/db.js";
 import redisPlugin from "./plugins/redis.js";
+import { monitorQueue } from "./queues/index.js";
+import jwtPlugin from "./plugins/jwt.js";
+import authenticationRoutes from "./modules/authentication/auth.routes.js";
 
 export async function createServer() {
   const app = Fastify({
     logger: { level: "info" },
+    bodyLimit: 1048576, // 1MB
   });
 
   // --- Register Plugins FIRST ---
   await app.register(mongoPlugin);
   await app.register(redisPlugin);
+  await app.register(jwtPlugin);
 
   // --- THEN Register Routes ---
   app.get("/health", async () => {
@@ -22,6 +27,19 @@ export async function createServer() {
       redis: app.redis?.status || "unknown",
     };
   });
+
+  app.post("/test-job", async () => {
+    await monitorQueue.add("test", {
+      monitorId: "123",
+      url: "https://google.com",
+      timeout: 5000,
+    });
+
+    return { ok: true };
+  });
+
+  // Register authentication routes
+  await app.register(authenticationRoutes, { prefix: "/auth" });
 
   return app;
 }
