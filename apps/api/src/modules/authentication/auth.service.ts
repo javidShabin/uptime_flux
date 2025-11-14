@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { FastifyInstance } from "fastify";
 import { env } from "../../config/env.js";
-import { UserModel, type UserDocument, type SafeUser } from "./auth.model.js";
+import { UserModel, type UserDocument, type SafeUser, type RefreshTokenEntity } from "./auth.model.js";
 import { OtpModel, OtpType } from "./otp.model.js";
 import { PendingRegistrationModel } from "./pending-registration.model.js";
 import { EmailService } from "./email.service.js";
@@ -143,6 +143,72 @@ export class AuthenticationService {
     return {
       user: user.toSafeObject(),
       message: "Account created successfully",
+    };
+  }
+
+  async login(app: FastifyInstance, payload: LoginInput): Promise<{ user: SafeUser; tokens: AuthTokens }> {
+    const email = payload.email.toLowerCase();
+
+    // Check if user exists
+    const user = await UserModel.findOne({ email });
+    if (!user) throw new AuthError(401, "Invalid email or password");
+
+    // Check if password is correct
+    const isPasswordCorrect = await user.comparePassword(payload.password);
+    if (!isPasswordCorrect) throw new AuthError(401, "Invalid email or password");
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new AuthError(403, "Email not verified. Please verify your email first.");
+    }
+
+    // Generate access token
+    const userId = String(user._id);
+    const accessToken = app.jwt.sign({ userId });
+
+    // Generate refresh token
+    const refreshTokenId = crypto.randomUUID();
+    const refreshToken = jwt.sign(
+      { userId, tokenId: refreshTokenId },
+      env.JWT_REFRESH_SECRET,
+      { expiresIn: `${this.refreshTokenTtlSeconds}s` }
+    );
+
+    // Hash refresh token for storage
+    const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+    // Store refresh token in user document
+    const refreshTokenEntity: RefreshTokenEntity = {
+      tokenId: refreshTokenId,
+      tokenHash: refreshTokenHash,
+      expiresAt: refreshTokenExpiresAt,
+      createdAt: new Date(),
+    };
+
+    // Add new refresh token and limit history
+    user.refreshTokens.push(refreshTokenEntity);
+    if (user.refreshTokens.length > REFRESH_TOKEN_HISTORY_LIMIT) {
+      // Remove oldest tokens (keep only the last N)
+      user.refreshTokens = user.refreshTokens
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, REFRESH_TOKEN_HISTORY_LIMIT);
+    }
+
+    // Update last login time
+    user.lastLoginAt = new Date();
+
+    // Save user
+    await user.save();
+
+    return {
+      user: user.toSafeObject(),
+      tokens: {
+        accessToken,
+        refreshToken,
+        refreshTokenId,
+        refreshTokenExpiresAt,
+      },
     };
   }
 }

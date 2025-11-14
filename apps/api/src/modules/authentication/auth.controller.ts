@@ -56,4 +56,27 @@ import {
             this.handleError(error, request, reply);
         }
     }
+
+    login = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const payload = loginSchema.parse(request.body);
+            const result = await this.authService.login(request.server, payload);
+            
+            // Set refresh token as HTTP-only cookie
+            reply.setCookie(REFRESH_COOKIE_NAME, result.tokens.refreshToken, {
+                httpOnly: true,
+                secure: env.NODE_ENV === "production",
+                sameSite: "strict",
+                path: "/",
+                expires: result.tokens.refreshTokenExpiresAt,
+            });
+
+            reply.code(200).send({
+                user: result.user,
+                accessToken: result.tokens.accessToken,
+            });
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
   }
