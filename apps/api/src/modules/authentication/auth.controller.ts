@@ -132,4 +132,32 @@ import {
             this.handleError(error, request, reply);
         }
     }
+
+    refresh = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            // Get refresh token from cookie or request body
+            const refreshToken = request.cookies[REFRESH_COOKIE_NAME] || 
+                                (request.body as { refreshToken?: string })?.refreshToken;
+
+            const payload = refreshSchema.parse({ refreshToken });
+            const result = await this.authService.refresh(request.server, payload);
+
+            // Update refresh token cookie if new token is provided
+            if (result.refreshToken && result.refreshTokenExpiresAt) {
+                reply.setCookie(REFRESH_COOKIE_NAME, result.refreshToken, {
+                    httpOnly: true,
+                    secure: env.NODE_ENV === "production",
+                    sameSite: "strict",
+                    path: "/",
+                    expires: result.refreshTokenExpiresAt,
+                });
+            }
+
+            reply.code(200).send({
+                accessToken: result.accessToken,
+            });
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
   }

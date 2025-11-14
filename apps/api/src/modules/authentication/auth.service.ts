@@ -13,6 +13,7 @@ import type {
   LoginInput,
   VerifyOtpInput,
   ResendOtpInput,
+  RefreshInput,
 } from "./auth.schemas.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
@@ -276,6 +277,93 @@ export class AuthenticationService {
 
     return {
       message: "Logged out successfully",
+    };
+  }
+
+  async refresh(app: FastifyInstance, payload: RefreshInput): Promise<{ accessToken: string; refreshToken?: string; refreshTokenExpiresAt?: Date }> {
+    const refreshToken = payload.refreshToken;
+    if (!refreshToken) {
+      throw new AuthError(400, "Refresh token is required");
+    }
+
+    // Verify refresh token
+    let decoded: { userId: string; tokenId: string };
+    try {
+      decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as { userId: string; tokenId: string };
+    } catch (error) {
+      throw new AuthError(401, "Invalid or expired refresh token");
+    }
+
+    // Find user with refresh tokens
+    const user = await UserModel.findById(decoded.userId).select("refreshTokens");
+    if (!user) {
+      throw new AuthError(404, "User not found");
+    }
+
+    // Hash the refresh token to find it in the database
+    const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+
+    // Find the refresh token in user's tokens
+    const tokenEntity = user.refreshTokens.find(
+      (token) => token.tokenHash === refreshTokenHash && !token.revokedAt
+    );
+
+    if (!tokenEntity) {
+      throw new AuthError(401, "Refresh token not found or revoked");
+    }
+
+    // Check if token is expired
+    if (new Date() > tokenEntity.expiresAt) {
+      // Remove expired token
+      user.refreshTokens = user.refreshTokens.filter(
+        (token) => token.tokenHash !== refreshTokenHash
+      );
+      await user.save();
+      throw new AuthError(401, "Refresh token has expired");
+    }
+
+    // Generate new access token
+    const userId = String(user._id);
+    const accessToken = app.jwt.sign({ userId });
+
+    // Rotate refresh token for security (generate new one)
+    const newRefreshTokenId = crypto.randomUUID();
+    const newRefreshToken = jwt.sign(
+      { userId, tokenId: newRefreshTokenId },
+      env.JWT_REFRESH_SECRET,
+      { expiresIn: `${this.refreshTokenTtlSeconds}s` }
+    );
+
+    const newRefreshTokenHash = crypto.createHash("sha256").update(newRefreshToken).digest("hex");
+    const newRefreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+    // Remove old token and add new one
+    user.refreshTokens = user.refreshTokens.filter(
+      (token) => token.tokenHash !== refreshTokenHash
+    );
+
+    const newRefreshTokenEntity: RefreshTokenEntity = {
+      tokenId: newRefreshTokenId,
+      tokenHash: newRefreshTokenHash,
+      expiresAt: newRefreshTokenExpiresAt,
+      createdAt: new Date(),
+    };
+
+    user.refreshTokens.push(newRefreshTokenEntity);
+
+    // Limit token history
+    if (user.refreshTokens.length > REFRESH_TOKEN_HISTORY_LIMIT) {
+      user.refreshTokens = user.refreshTokens
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, REFRESH_TOKEN_HISTORY_LIMIT);
+    }
+
+    await user.save();
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      refreshTokenExpiresAt: newRefreshTokenExpiresAt,
     };
   }
 }
