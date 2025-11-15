@@ -7,8 +7,7 @@ import jwtPlugin from "./plugins/jwt.js";
 import cookiePlugin from "./plugins/cookie.js";
 import cloudinaryPlugin from "./plugins/cloudinary.js";
 import multipart from "@fastify/multipart";
-import authenticationRoutes from "./modules/authentication/auth.routes.js";
-import profileRoutes from "./modules/profile/profile.routes.js";
+import routes from "./routes/index.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -49,11 +48,8 @@ export async function createServer() {
     return { ok: true };
   });
 
-  // Register authentication routes
-  await app.register(authenticationRoutes, { prefix: "/auth" });
-
-  // Register profile routes
-  await app.register(profileRoutes, { prefix: "/profile" });
+  // Register all routes
+  await app.register(routes);
 
   return app;
 }

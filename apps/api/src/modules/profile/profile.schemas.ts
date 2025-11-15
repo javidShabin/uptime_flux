@@ -19,3 +19,17 @@ export const getProfileByIdSchema = z.object({
 
 export type GetProfileByIdInput = z.infer<typeof getProfileByIdSchema>;
 
+export const setupTwoFactorSchema = z.object({});
+
+export const verifyTwoFactorSchema = z.object({
+  token: z.string().regex(/^\d{6}$/, "Token must be 6 digits"),
+});
+
+export const disableTwoFactorSchema = z.object({
+  token: z.string().regex(/^\d{6}$/, "Token must be 6 digits"),
+});
+
+export type SetupTwoFactorInput = z.infer<typeof setupTwoFactorSchema>;
+export type VerifyTwoFactorInput = z.infer<typeof verifyTwoFactorSchema>;
+export type DisableTwoFactorInput = z.infer<typeof disableTwoFactorSchema>;
+
