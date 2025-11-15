@@ -9,6 +9,9 @@ import {
     verifyOtpSchema,
     resendOtpSchema,
     refreshSchema,
+    forgotPasswordSchema,
+    verifyForgotPasswordOtpSchema,
+    resetPasswordSchema,
   } from "./auth.schemas.js";
   import { AuthenticationService } from "./auth.service.js";
   import { AuthError } from "./auth.errors.js";
@@ -156,6 +159,36 @@ import {
             reply.code(200).send({
                 accessToken: result.accessToken,
             });
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
+
+    forgotPassword = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const payload = forgotPasswordSchema.parse(request.body);
+            const result = await this.authService.forgotPassword(request.server, payload);
+            reply.code(200).send(result);
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
+
+    verifyForgotPasswordOtp = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const payload = verifyForgotPasswordOtpSchema.parse(request.body);
+            const result = await this.authService.verifyForgotPasswordOtp(request.server, payload);
+            reply.code(200).send(result);
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
+
+    resetPassword = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const payload = resetPasswordSchema.parse(request.body);
+            const result = await this.authService.resetPassword(request.server, payload);
+            reply.code(200).send(result);
         } catch (error) {
             this.handleError(error, request, reply);
         }

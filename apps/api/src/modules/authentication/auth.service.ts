@@ -14,6 +14,9 @@ import type {
   VerifyOtpInput,
   ResendOtpInput,
   RefreshInput,
+  ForgotPasswordInput,
+  VerifyForgotPasswordOtpInput,
+  ResetPasswordInput,
 } from "./auth.schemas.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
@@ -364,6 +367,118 @@ export class AuthenticationService {
       accessToken,
       refreshToken: newRefreshToken,
       refreshTokenExpiresAt: newRefreshTokenExpiresAt,
+    };
+  }
+
+  async forgotPassword(app: FastifyInstance, payload: ForgotPasswordInput) {
+    const email = payload.email.toLowerCase();
+
+    // Check if user exists
+    const user = await UserModel.findOne({ email }).lean().select("_id email");
+    if (!user) {
+      // Don't reveal if user exists for security
+      return {
+        message: "If an account exists with this email, a password reset code has been sent.",
+      };
+    }
+
+    // Check if email is verified
+    const userWithVerification = await UserModel.findOne({ email }).select("isEmailVerified");
+    if (!userWithVerification?.isEmailVerified) {
+      throw new AuthError(403, "Email not verified. Please verify your email first.");
+    }
+
+    // Generate and send OTP for password reset
+    await this.issueOtp(email, OtpType.PASSWORD_RESET);
+
+    return {
+      message: "If an account exists with this email, a password reset code has been sent.",
+    };
+  }
+
+  async verifyForgotPasswordOtp(app: FastifyInstance, payload: VerifyForgotPasswordOtpInput) {
+    const email = payload.email.toLowerCase();
+    const codeHash = crypto.createHash("sha256").update(payload.code).digest("hex");
+    const now = new Date();
+
+    // Find and verify OTP
+    const otp = await OtpModel.findOne({
+      email,
+      type: OtpType.PASSWORD_RESET,
+      codeHash,
+      expiresAt: { $gt: now },
+    }).lean();
+
+    if (!otp) {
+      // Check if OTP exists but is wrong/expired
+      const exists = await OtpModel.findOne({ email, type: OtpType.PASSWORD_RESET }).lean().select("expiresAt");
+      if (exists) {
+        if (new Date() > exists.expiresAt) {
+          throw new AuthError(400, "Verification code has expired. Please request a new one.");
+        }
+        throw new AuthError(400, "Invalid verification code");
+      }
+      throw new AuthError(404, "No password reset request found. Please request a new password reset.");
+    }
+
+    // Verify user exists
+    const user = await UserModel.findOne({ email }).lean().select("_id");
+    if (!user) {
+      throw new AuthError(404, "User not found");
+    }
+
+    return {
+      message: "Verification code is valid. You can now reset your password.",
+    };
+  }
+
+  async resetPassword(app: FastifyInstance, payload: ResetPasswordInput) {
+    const email = payload.email.toLowerCase();
+    const codeHash = crypto.createHash("sha256").update(payload.code).digest("hex");
+    const now = new Date();
+
+    // Find and verify OTP
+    const otp = await OtpModel.findOne({
+      email,
+      type: OtpType.PASSWORD_RESET,
+      codeHash,
+      expiresAt: { $gt: now },
+    });
+
+    if (!otp) {
+      // Check if OTP exists but is wrong/expired
+      const exists = await OtpModel.findOne({ email, type: OtpType.PASSWORD_RESET }).lean().select("expiresAt");
+      if (exists) {
+        if (new Date() > exists.expiresAt) {
+          throw new AuthError(400, "Verification code has expired. Please request a new one.");
+        }
+        throw new AuthError(400, "Invalid verification code");
+      }
+      throw new AuthError(404, "No password reset request found. Please request a new password reset.");
+    }
+
+    // Find user
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      throw new AuthError(404, "User not found");
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(payload.newPassword, PASSWORD_SALT_ROUNDS);
+
+    // Update password
+    user.passwordHash = newPasswordHash;
+    await user.save();
+
+    // Delete OTP after successful password reset
+    await OtpModel.deleteOne({ email, type: OtpType.PASSWORD_RESET });
+
+    // Revoke all refresh tokens for security
+    user.refreshTokens = [];
+    await user.save();
+
+    return {
+      message: "Password has been reset successfully. Please login with your new password.",
     };
   }
 }
