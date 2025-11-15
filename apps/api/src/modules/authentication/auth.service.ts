@@ -8,6 +8,8 @@ import { OtpModel, OtpType } from "./otp.model.js";
 import { PendingRegistrationModel } from "./pending-registration.model.js";
 import { EmailService } from "./email.service.js";
 import { AuthError } from "./auth.errors.js";
+import { ProfileModel } from "../profile/profile.model.js";
+import { DEFAULT_AVATAR_URL } from "../../config/constants.js";
 import type {
   RegisterInput,
   LoginInput,
@@ -103,7 +105,7 @@ export class AuthenticationService {
     };
   }
 
-  async verifyOtp(app: FastifyInstance, payload: VerifyOtpInput) {
+  async verifyOtp(app: FastifyInstance, payload: VerifyOtpInput): Promise<{ user: SafeUser; tokens: AuthTokens }> {
     const email = payload.email.toLowerCase();
     const codeHash = crypto.createHash("sha256").update(payload.code).digest("hex");
 
@@ -141,12 +143,68 @@ export class AuthenticationService {
       otpVerifiedAt: new Date(),
     });
 
+    // Create profile with firstName, lastName
+    await ProfileModel.create({
+      userId: user._id,
+      firstName: pendingRegistration.firstName,
+      lastName: pendingRegistration.lastName,
+      name: "",
+      avatarUrl: DEFAULT_AVATAR_URL,
+      timezone: "UTC",
+      twoFactorEnabled: false,
+      twoFactorSecretEncrypted: null,
+    });
+
+    // Generate access token
+    const userId = String(user._id);
+    const accessToken = app.jwt.sign({ userId });
+
+    // Generate refresh token
+    const refreshTokenId = crypto.randomUUID();
+    const refreshToken = jwt.sign(
+      { userId, tokenId: refreshTokenId },
+      env.JWT_REFRESH_SECRET,
+      { expiresIn: `${this.refreshTokenTtlSeconds}s` }
+    );
+
+    // Hash refresh token for storage
+    const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+    // Store refresh token in user document
+    const refreshTokenEntity: RefreshTokenEntity = {
+      tokenId: refreshTokenId,
+      tokenHash: refreshTokenHash,
+      expiresAt: refreshTokenExpiresAt,
+      createdAt: new Date(),
+    };
+
+    // Add new refresh token and limit history
+    user.refreshTokens.push(refreshTokenEntity);
+    if (user.refreshTokens.length > REFRESH_TOKEN_HISTORY_LIMIT) {
+      // Remove oldest tokens (keep only the last N)
+      user.refreshTokens = user.refreshTokens
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, REFRESH_TOKEN_HISTORY_LIMIT);
+    }
+
+    // Update last login time
+    user.lastLoginAt = new Date();
+
+    // Save user
+    await user.save();
+
     // Delete pending registration
     await PendingRegistrationModel.deleteOne({ email });
 
     return {
       user: user.toSafeObject(),
-      message: "Account created successfully",
+      tokens: {
+        accessToken,
+        refreshToken,
+        refreshTokenId,
+        refreshTokenExpiresAt,
+      },
     };
   }
 

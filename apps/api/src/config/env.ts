@@ -21,6 +21,9 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional().default(""),
   SMTP_PASS: z.string().optional().default(""),
   SMTP_FROM: z.string().optional().default("UptimeFlux <noreply@uptimeflux.com>"),
+  CLOUD_NAME: z.string().min(1, "CLOUD_NAME is required"),
+  CLOUD_API_KEY: z.string().min(1, "CLOUD_API_KEY is required"),
+  CLOUD_API_SECRET: z.string().min(1, "CLOUD_API_SECRET is required"),
 });
 
 const parsed = envSchema.safeParse(process.env);

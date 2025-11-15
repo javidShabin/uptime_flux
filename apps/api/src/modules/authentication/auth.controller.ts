@@ -55,7 +55,21 @@ import {
         try {
             const payload = verifyOtpSchema.parse(request.body);
             const result = await this.authService.verifyOtp(request.server, payload);
-            reply.code(200).send(result);
+            
+            // Set refresh token as HTTP-only cookie
+            reply.setCookie(REFRESH_COOKIE_NAME, result.tokens.refreshToken, {
+                httpOnly: true,
+                secure: env.NODE_ENV === "production",
+                sameSite: "strict",
+                path: "/",
+                expires: result.tokens.refreshTokenExpiresAt,
+            });
+
+            reply.code(200).send({
+                user: result.user,
+                accessToken: result.tokens.accessToken,
+                message: "Account created successfully",
+            });
         } catch (error) {
             this.handleError(error, request, reply);
         }
