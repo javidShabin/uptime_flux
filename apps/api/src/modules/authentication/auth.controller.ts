@@ -12,6 +12,8 @@ import {
     forgotPasswordSchema,
     verifyForgotPasswordOtpSchema,
     resetPasswordSchema,
+    requestChangeEmailSchema,
+    verifyChangeEmailSchema,
   } from "./auth.schemas.js";
   import { AuthenticationService } from "./auth.service.js";
   import { AuthError } from "./auth.errors.js";
@@ -207,4 +209,26 @@ import {
             this.handleError(error, request, reply);
         }
     }
-  }
+
+    requestChangeEmail = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const userId = (request.user as { userId: string }).userId;
+            const payload = requestChangeEmailSchema.parse(request.body);
+            const result = await this.authService.requestChangeEmail(request.server, userId, payload);
+            reply.code(200).send(result);
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
+
+    verifyChangeEmail = async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const userId = (request.user as { userId: string }).userId;
+            const payload = verifyChangeEmailSchema.parse(request.body);
+            const result = await this.authService.verifyChangeEmail(request.server, userId, payload);
+            reply.code(200).send(result);
+        } catch (error) {
+            this.handleError(error, request, reply);
+        }
+    }
+}
