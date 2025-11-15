@@ -3,15 +3,30 @@ import { env } from "./config/env.js";
 import mongoPlugin from "./plugins/db.js";
 import redisPlugin from "./plugins/redis.js";
 import { monitorQueue } from "./queues/index.js";
+import jwtPlugin from "./plugins/jwt.js";
+import cookiePlugin from "./plugins/cookie.js";
+import cloudinaryPlugin from "./plugins/cloudinary.js";
+import multipart from "@fastify/multipart";
+import authenticationRoutes from "./modules/authentication/auth.routes.js";
+import profileRoutes from "./modules/profile/profile.routes.js";
 
 export async function createServer() {
   const app = Fastify({
     logger: { level: "info" },
+    bodyLimit: 1048576, // 1MB
   });
 
   // --- Register Plugins FIRST ---
   await app.register(mongoPlugin);
   await app.register(redisPlugin);
+  await app.register(cookiePlugin);
+  await app.register(jwtPlugin);
+  await app.register(multipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+  });
+  await app.register(cloudinaryPlugin);
 
   // --- THEN Register Routes ---
   app.get("/health", async () => {
@@ -33,6 +48,12 @@ export async function createServer() {
 
     return { ok: true };
   });
+
+  // Register authentication routes
+  await app.register(authenticationRoutes, { prefix: "/auth" });
+
+  // Register profile routes
+  await app.register(profileRoutes, { prefix: "/profile" });
 
   return app;
 }

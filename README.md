@@ -232,6 +232,20 @@ Check the server health status.
 curl http://localhost:3000/health
 ```
 
+### Authentication
+
+The API uses OTP-based email verification for user registration.
+
+**Registration Flow:**
+1. User submits signup details → OTP is generated and sent to email
+2. User verifies OTP → Account is created
+
+**Endpoints:**
+- `POST /register` - Register a new user (requires OTP verification)
+- `POST /verify-otp` - Verify OTP and create account
+
+For detailed authentication documentation, see [API README](apps/api/README.md).
+
 ### Test Job
 
 Enqueue a test monitoring job to the worker queue.
