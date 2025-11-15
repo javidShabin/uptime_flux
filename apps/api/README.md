@@ -25,7 +25,9 @@
 ## ✨ Features
 
 - ⚡ **Fast**: Built on Fastify for high performance
-- 🔒 **Secure**: JWT authentication ready
+- 🔒 **Secure**: OTP-based email verification for user registration
+- 📧 **Email Verification**: Secure account creation with OTP codes
+- 🔐 **JWT Authentication**: Token-based authentication with refresh tokens
 - 📊 **Monitoring**: Health check endpoints
 - 🔄 **Queue System**: BullMQ for background jobs
 - 💾 **Database**: MongoDB with Mongoose ODM
@@ -89,6 +91,23 @@ REDIS_URL=redis://localhost:6379
 
 # Security (use a strong, random secret in production)
 JWT_SECRET=replace-with-a-strong-random-secret-key
+JWT_REFRESH_SECRET=replace-with-a-strong-random-refresh-secret-key
+COOKIE_SECRET=replace-with-a-strong-random-cookie-secret-at-least-32-chars
+
+# Token Configuration
+REFRESH_TOKEN_TTL_DAYS=30
+
+# OTP Configuration
+OTP_EXPIRATION_MINUTES=10
+OTP_RESEND_INTERVAL_SECONDS=60
+
+# Email Configuration (SMTP)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+SMTP_FROM=UptimeFlux <noreply@uptimeflux.com>
 ```
 
 > ⚠️ **Security Note**: Never commit `.env` files. Use strong, unique secrets in production.
@@ -102,6 +121,8 @@ JWT_SECRET=replace-with-a-strong-random-secret-key
 | `MONGO_URL` | MongoDB connection string | `mongodb://[host]:[port]/[database]` |
 | `REDIS_URL` | Redis connection string | `redis://[host]:[port]` |
 | `JWT_SECRET` | Secret key for JWT signing | `strong-random-string` |
+| `JWT_REFRESH_SECRET` | Secret key for JWT refresh tokens | `strong-random-string` |
+| `COOKIE_SECRET` | Secret key for cookie signing (min 32 chars) | `strong-random-string-32-chars-min` |
 
 #### Optional
 
@@ -109,6 +130,15 @@ JWT_SECRET=replace-with-a-strong-random-secret-key
 |----------|-------------|---------|
 | `PORT` | Server port | `3000` |
 | `NODE_ENV` | Environment mode | `development` |
+| `REFRESH_TOKEN_TTL_DAYS` | Refresh token expiration in days | `30` |
+| `OTP_EXPIRATION_MINUTES` | OTP code expiration time (1-30 min) | `10` |
+| `OTP_RESEND_INTERVAL_SECONDS` | Minimum time between OTP resends (30-300 sec) | `60` |
+| `SMTP_HOST` | SMTP server hostname | `""` |
+| `SMTP_PORT` | SMTP server port | `587` |
+| `SMTP_SECURE` | Use TLS/SSL for SMTP | `false` |
+| `SMTP_USER` | SMTP username | `""` |
+| `SMTP_PASS` | SMTP password | `""` |
+| `SMTP_FROM` | Email sender address | `UptimeFlux <noreply@uptimeflux.com>` |
 
 ## 🚀 Usage
 
@@ -170,6 +200,130 @@ Check the server health status.
 curl http://localhost:3000/health
 ```
 
+### Authentication
+
+The API uses OTP-based email verification for secure user registration. Users must verify their email with a 6-digit OTP code before their account is created.
+
+#### Register User
+
+Register a new user account. This endpoint stores the user data temporarily and sends an OTP code to the provided email. The account is only created after OTP verification.
+
+**Endpoint:** `POST /register`
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecureP@ssw0rd123",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+
+**Password Requirements:**
+- Minimum 12 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character
+
+**Response (201 Created):**
+
+```json
+{
+  "message": "Verification code sent to email",
+  "requiresVerification": true
+}
+```
+
+**Error Responses:**
+- `409 Conflict`: Account already exists or registration already in progress
+- `500 Internal Server Error`: Failed to send verification email
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecureP@ssw0rd123",
+    "firstName": "John",
+    "lastName": "Doe"
+  }'
+```
+
+#### Verify OTP
+
+Verify the OTP code sent to the user's email and create the account.
+
+**Endpoint:** `POST /verify-otp`
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "code": "123456",
+  "type": "EMAIL_VERIFICATION"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "isEmailVerified": true,
+    "createdAt": "2024-01-01T12:00:00.000Z",
+    "updatedAt": "2024-01-01T12:00:00.000Z"
+  },
+  "message": "Account created successfully"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid or expired OTP code
+- `404 Not Found`: No pending registration found
+- `409 Conflict`: Account already exists
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "code": "123456",
+    "type": "EMAIL_VERIFICATION"
+  }'
+```
+
+**Registration Flow:**
+
+1. **Step 1**: User calls `POST /register` with their details
+   - System generates a 6-digit OTP code
+   - User data is stored in `PendingRegistration` collection
+   - OTP is sent to the user's email
+   - OTP expires after the configured time (default: 10 minutes)
+
+2. **Step 2**: User calls `POST /verify-otp` with the OTP code
+   - System verifies the OTP code
+   - If valid, user account is created in `User` collection
+   - Pending registration is deleted
+   - User can now log in
+
+**Important Notes:**
+- Pending registrations are automatically deleted when OTP expires
+- If email sending fails, the pending registration is automatically cleaned up
+- Each email can only have one pending registration at a time
+- OTP codes are hashed before storage for security
+
 ### Test Job
 
 Enqueue a test monitoring job to the worker queue.
@@ -207,6 +361,16 @@ apps/api/
 │   │   └── env.ts           # Environment validation (Zod)
 │   ├── jobs/                # Background jobs
 │   ├── modules/             # Feature modules
+│   │   └── authentication/  # Authentication module
+│   │       ├── auth.controller.ts      # Request handlers
+│   │       ├── auth.service.ts          # Business logic
+│   │       ├── auth.model.ts            # User model
+│   │       ├── auth.routes.ts           # Route definitions
+│   │       ├── auth.schemas.ts          # Request validation schemas
+│   │       ├── auth.errors.ts           # Custom error classes
+│   │       ├── otp.model.ts             # OTP model
+│   │       ├── pending-registration.model.ts  # Pending registration model
+│   │       └── email.service.ts        # Email service
 │   ├── plugins/             # Fastify plugins
 │   │   ├── db.ts            # MongoDB connection plugin
 │   │   ├── jwt.ts           # JWT authentication plugin
@@ -239,7 +403,22 @@ The API uses a plugin-based architecture:
 
 - **MongoDB Plugin** (`plugins/db.ts`) - Handles MongoDB connection and lifecycle
 - **Redis Plugin** (`plugins/redis.ts`) - Manages Redis connection, exposes `app.redis`
-- **JWT Plugin** (`plugins/jwt.ts`) - JWT authentication (to be configured)
+- **JWT Plugin** (`plugins/jwt.ts`) - JWT authentication with access and refresh tokens
+
+### Authentication Module
+
+The authentication module provides secure user registration with OTP-based email verification:
+
+- **Registration Flow**: Two-step process (register → verify OTP)
+- **Data Models**:
+  - `User` - Active user accounts
+  - `PendingRegistration` - Temporary storage for unverified signups
+  - `Otp` - OTP code management
+- **Security Features**:
+  - Password hashing with bcrypt
+  - OTP codes hashed before storage
+  - Automatic cleanup of expired pending registrations
+  - Email verification required before account creation
 
 ### Code Style
 
