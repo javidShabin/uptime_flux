@@ -8,6 +8,7 @@ import cookiePlugin from "./plugins/cookie.js";
 import cloudinaryPlugin from "./plugins/cloudinary.js";
 import multipart from "@fastify/multipart";
 import authenticationRoutes from "./modules/authentication/auth.routes.js";
+import profileRoutes from "./modules/profile/profile.routes.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -50,6 +51,9 @@ export async function createServer() {
 
   // Register authentication routes
   await app.register(authenticationRoutes, { prefix: "/auth" });
+
+  // Register profile routes
+  await app.register(profileRoutes, { prefix: "/profile" });
 
   return app;
 }

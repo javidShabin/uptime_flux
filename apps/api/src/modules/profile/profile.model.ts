@@ -3,9 +3,18 @@ import { DEFAULT_AVATAR_URL } from "../../config/constants.js";
 
 export interface IProfile extends Document {
   userId: Types.ObjectId;
+  firstName: string;
+  lastName: string;
   name?: string;
   avatarUrl?: string;
   timezone?: string;
+
+  // 2FA (TOTP) system
+  twoFactorEnabled: boolean;
+  twoFactorSecretEncrypted?: string | null;
+
+  // Security metadata
+  lastPasswordChange?: Date;
 
   // Timestamps handled by Mongoose
   createdAt: Date;
@@ -22,6 +31,16 @@ const ProfileSchema = new Schema<IProfile>(
       index: true,
     },
 
+    firstName: {
+      type: String,
+      required: true,
+    },
+
+    lastName: {
+      type: String,
+      required: true,
+    },
+
     name: {
       type: String,
       default: "",
@@ -35,6 +54,21 @@ const ProfileSchema = new Schema<IProfile>(
     timezone: {
       type: String,
       default: "UTC",
+    },
+
+    // 2FA (TOTP) system
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecretEncrypted: {
+      type: String,
+      default: null,
+    },
+
+    // Security metadata
+    lastPasswordChange: {
+      type: Date,
     },
   },
   {

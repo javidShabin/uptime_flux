@@ -1,40 +1,18 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { uploadToCloudinary } from "../../utils/upload.js";
+import type { FastifyInstance } from "fastify";
+import { ProfileService } from "./profile.service.js";
+import { ProfileController } from "./profile.controller.js";
 
 export default async function profileRoutes(app: FastifyInstance) {
-  // Example: Upload avatar image
-  app.post("/upload-avatar", { preHandler: [app.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const data = await request.file();
-      
-      if (!data) {
-        return reply.code(400).send({ error: "No file uploaded" });
-      }
+  const service = new ProfileService();
+  const controller = new ProfileController(service);
 
-      const result = await uploadToCloudinary(data, app.cloudinary, {
-        folder: "avatars",
-        allowedFormats: ["jpg", "jpeg", "png", "webp"],
-        maxFileSize: 5 * 1024 * 1024, // 5MB
-        transformation: {
-          width: 400,
-          height: 400,
-          crop: "fill",
-          quality: "auto",
-        },
-      });
+  // Get current user's profile
+  app.get("/me", { preHandler: [app.authenticate] }, controller.getMyProfile);
 
-      return reply.code(200).send({
-        message: "Avatar uploaded successfully",
-        image: {
-          url: result.secureUrl,
-          publicId: result.publicId,
-          width: result.width,
-          height: result.height,
-        },
-      });
-    } catch (error: any) {
-      return reply.code(400).send({ error: error.message || "Upload failed" });
-    }
-  });
+  // Get profile by user ID
+  app.get("/:id", { preHandler: [app.authenticate] }, controller.getProfileById);
+
+  // Update current user's profile (supports multipart/form-data for avatar upload)
+  app.put("/me", { preHandler: [app.authenticate] }, controller.updateProfile);
 }
 
