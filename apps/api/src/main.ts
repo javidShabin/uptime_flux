@@ -5,6 +5,8 @@ import redisPlugin from "./plugins/redis.js";
 import { monitorQueue } from "./queues/index.js";
 import jwtPlugin from "./plugins/jwt.js";
 import cookiePlugin from "./plugins/cookie.js";
+import cloudinaryPlugin from "./plugins/cloudinary.js";
+import multipart from "@fastify/multipart";
 import authenticationRoutes from "./modules/authentication/auth.routes.js";
 
 export async function createServer() {
@@ -18,6 +20,12 @@ export async function createServer() {
   await app.register(redisPlugin);
   await app.register(cookiePlugin);
   await app.register(jwtPlugin);
+  await app.register(multipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+  });
+  await app.register(cloudinaryPlugin);
 
   // --- THEN Register Routes ---
   app.get("/health", async () => {
