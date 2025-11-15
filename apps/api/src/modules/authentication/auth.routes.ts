@@ -18,7 +18,6 @@ export default async function authenticationRoutes(app: FastifyInstance) {
     app.post("/forgot-password", controller.forgotPassword);
     app.post("/verify-forgot-password-otp", controller.verifyForgotPasswordOtp);
     app.post("/reset-password", controller.resetPassword);
-    
     app.post("/request-change-email", { preHandler: [app.authenticate] }, controller.requestChangeEmail);
     app.post("/verify-change-email", { preHandler: [app.authenticate] }, controller.verifyChangeEmail);
   }
