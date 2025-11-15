@@ -3,6 +3,7 @@ import { Schema, model, type Document } from "mongoose";
 export enum OtpType {
   EMAIL_VERIFICATION = "EMAIL_VERIFICATION",
   PASSWORD_RESET = "PASSWORD_RESET",
+  EMAIL_CHANGE = "EMAIL_CHANGE",
 }
 
 export interface OtpDocument extends Document {

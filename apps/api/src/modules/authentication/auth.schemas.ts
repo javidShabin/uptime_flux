@@ -55,6 +55,15 @@ export const resetPasswordSchema = z.object({
     .regex(/[^A-Za-z0-9]/, "Must include a symbol"),
 });
 
+export const requestChangeEmailSchema = z.object({
+  newEmail: z.string().email(),
+});
+
+export const verifyChangeEmailSchema = z.object({
+  newEmail: z.string().email(),
+  code: z.string().regex(/^\d{6}$/),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
@@ -63,3 +72,5 @@ export type RefreshInput = z.infer<typeof refreshSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type VerifyForgotPasswordOtpInput = z.infer<typeof verifyForgotPasswordOtpSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type RequestChangeEmailInput = z.infer<typeof requestChangeEmailSchema>;
+export type VerifyChangeEmailInput = z.infer<typeof verifyChangeEmailSchema>;

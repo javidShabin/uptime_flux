@@ -19,6 +19,8 @@ import type {
   ForgotPasswordInput,
   VerifyForgotPasswordOtpInput,
   ResetPasswordInput,
+  RequestChangeEmailInput,
+  VerifyChangeEmailInput,
 } from "./auth.schemas.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
@@ -537,6 +539,84 @@ export class AuthenticationService {
 
     return {
       message: "Password has been reset successfully. Please login with your new password.",
+    };
+  }
+
+  async requestChangeEmail(app: FastifyInstance, userId: string, payload: RequestChangeEmailInput) {
+    const newEmail = payload.newEmail.toLowerCase();
+
+    // Check if new email is same as current email
+    const user = await UserModel.findById(userId).select("email");
+    if (!user) {
+      throw new AuthError(404, "User not found");
+    }
+
+    if (user.email.toLowerCase() === newEmail) {
+      throw new AuthError(400, "New email must be different from current email");
+    }
+
+    // Check if new email is already taken
+    const existingUser = await UserModel.findOne({ email: newEmail });
+    if (existingUser) {
+      throw new AuthError(409, "Email is already in use");
+    }
+
+    // Generate and send OTP to new email
+    await this.issueOtp(newEmail, OtpType.EMAIL_CHANGE);
+
+    return {
+      message: "Verification code sent to new email address",
+    };
+  }
+
+  async verifyChangeEmail(app: FastifyInstance, userId: string, payload: VerifyChangeEmailInput) {
+    const newEmail = payload.newEmail.toLowerCase();
+    const codeHash = crypto.createHash("sha256").update(payload.code).digest("hex");
+    const now = new Date();
+
+    // Find and verify OTP
+    const otp = await OtpModel.findOne({
+      email: newEmail,
+      type: OtpType.EMAIL_CHANGE,
+      codeHash,
+      expiresAt: { $gt: now },
+    });
+
+    if (!otp) {
+      // Check if OTP exists but is wrong/expired
+      const exists = await OtpModel.findOne({ email: newEmail, type: OtpType.EMAIL_CHANGE }).lean().select("expiresAt");
+      if (exists) {
+        if (new Date() > exists.expiresAt) {
+          throw new AuthError(400, "Verification code has expired. Please request a new one.");
+        }
+        throw new AuthError(400, "Invalid verification code");
+      }
+      throw new AuthError(404, "No email change request found. Please request a new email change.");
+    }
+
+    // Find user
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw new AuthError(404, "User not found");
+    }
+
+    // Check if new email is already taken (race condition check)
+    const existingUser = await UserModel.findOne({ email: newEmail });
+    if (existingUser) {
+      await OtpModel.deleteOne({ email: newEmail, type: OtpType.EMAIL_CHANGE });
+      throw new AuthError(409, "Email is already in use");
+    }
+
+    // Update user email
+    user.email = newEmail;
+    await user.save();
+
+    // Delete OTP after successful email change
+    await OtpModel.deleteOne({ email: newEmail, type: OtpType.EMAIL_CHANGE });
+
+    return {
+      message: "Email has been changed successfully",
+      user: user.toSafeObject(),
     };
   }
 }
