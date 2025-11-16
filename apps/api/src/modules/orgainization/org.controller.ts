@@ -68,5 +68,33 @@ export class OrgController {
       this.handleError(error, request, reply);
     }
   };
+  /**
+   * Update organization
+   */
+  updateOrg = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as { userId: string }).userId;
+      const params = getOrgByIdSchema.parse(request.params);
+      const data = updateOrgSchema.parse(request.body);
+      const org = await this.orgService.updateOrg(userId, params.id, data);
+      return reply.code(200).send(org);
+    } catch (error) {
+      this.handleError(error, request, reply);
+    }
+  };
+
+  /**
+   * Delete organization
+   */
+  deleteOrg = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as { userId: string }).userId;
+      const params = deleteOrgSchema.parse(request.params);
+      await this.orgService.deleteOrg(userId, params.id);
+      return reply.code(204).send();
+    } catch (error) {
+      this.handleError(error, request, reply);
+    }
+  };
 }
 

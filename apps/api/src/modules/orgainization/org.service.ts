@@ -83,29 +83,6 @@ export class OrgService {
     return this.toResponse(org);
   }
 
-  private toResponse(org: IOrg): OrgResponse {
-    return {
-      id: (org._id as Types.ObjectId).toString(),
-      name: org.name,
-      slug: org.slug,
-      ownerId: org.ownerId.toString(),
-      createdAt: org.createdAt,
-      updatedAt: org.updatedAt,
-    };
-  }
-
-  /**
-   * Check if user is a member of the organization
-   */
-  private async isOrgMember(userId: string, orgId: string): Promise<boolean> {
-    const member = await MemberModel.findOne({
-      userId: new Types.ObjectId(userId),
-      orgId: new Types.ObjectId(orgId),
-    }).lean();
-
-    return !!member;
-  }
-
   /**
    * Get organization by Id (with ownership checking)
    */
@@ -202,4 +179,123 @@ export class OrgService {
       },
     };
   }
+  /**
+   * Update organization (only owner can update)
+   */
+  async updateOrg(userId: string, orgId: string, data: UpdateOrgInput): Promise<OrgResponse> {
+    if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(orgId)) {
+      throw new OrgError(400, "Invalid ID format");
+    }
+
+    const org = await OrgModel.findById(orgId);
+
+    if (!org) {
+      throw new OrgError(404, "Organization not found");
+    }
+
+    // Check ownership
+    if (String(org.ownerId) !== userId) {
+      throw new OrgError(403, "Only organization owner can update");
+    }
+
+    // Update fields
+    if (data.name !== undefined) {
+      org.name = data.name;
+    }
+
+    if (data.slug !== undefined) {
+      // Validate slug
+      if (!/^[a-z0-9-]+$/.test(data.slug)) {
+        throw new OrgError(400, "Invalid slug format");
+      }
+
+      // Check if slug is already taken
+      const existingOrg = await OrgModel.findOne({
+        slug: data.slug,
+        _id: { $ne: orgId },
+      }).lean();
+
+      if (existingOrg) {
+        throw new OrgError(409, "Slug already taken");
+      }
+
+      org.slug = data.slug;
+    }
+
+    await org.save();
+
+    return this.toResponse(org);
+  }
+
+  /**
+   * Delete organization (only owner can delete)
+   */
+  async deleteOrg(userId: string, orgId: string): Promise<void> {
+    if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(orgId)) {
+      throw new OrgError(400, "Invalid ID format");
+    }
+
+    const org = await OrgModel.findById(orgId).lean();
+
+    if (!org) {
+      throw new OrgError(404, "Organization not found");
+    }
+
+    // Check ownership
+    if (String(org.ownerId) !== userId) {
+      throw new OrgError(403, "Only organization owner can delete");
+    }
+
+    // Check if org has projects
+    const projectCount = await ProjectModel.countDocuments({
+      orgId: new Types.ObjectId(orgId),
+    });
+
+    if (projectCount > 0) {
+      throw new OrgError(400, "Cannot delete organization with existing projects. Please delete projects first.");
+    }
+
+    await OrgModel.deleteOne({ _id: new Types.ObjectId(orgId) });
+  }
+
+  /**
+   * Check if user is a member of organization (through projects)
+   */
+  async isOrgMember(userId: string, orgId: string): Promise<boolean> {
+    // Get all projects in org
+    const projects = await ProjectModel.find({
+      orgId: new Types.ObjectId(orgId),
+    })
+      .select("_id")
+      .lean();
+
+    if (projects.length === 0) {
+      return false;
+    }
+
+    const projectIds = projects.map((p) => p._id);
+
+    // Check if user is member of any project
+    const member = await MemberModel.findOne({
+      userId: new Types.ObjectId(userId),
+      projectId: { $in: projectIds },
+    }).lean();
+
+    return !!member;
+  }
+
+  /**
+   * Convert org document to response format
+   */
+  private toResponse(org: IOrg): OrgResponse {
+    return {
+      id: String(org._id),
+      name: org.name,
+      slug: org.slug,
+      ownerId: String(org.ownerId),
+      createdAt: org.createdAt,
+      updatedAt: org.updatedAt,
+    };
+  }
 }
+

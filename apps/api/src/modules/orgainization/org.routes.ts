@@ -13,7 +13,13 @@ export default async function orgRoutes(app: FastifyInstance) {
   app.get("/org/:id", {preHandler: [app.authenticate]}, controller.getOrgById);
 
   // Get organizations list
-  app.get("/", {preHandler: [app.authenticate]}, controller.getOrgs);
+  app.get("all-orgs/", {preHandler: [app.authenticate]}, controller.getOrgs);
+
+  // Update organization
+  app.put("/:id", {preHandler: [app.authenticate]}, controller.updateOrg);
+
+  // Delete organization
+  app.delete("/:id", {preHandler: [app.authenticate]}, controller.deleteOrg);
 
 }
 
