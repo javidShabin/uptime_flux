@@ -43,7 +43,7 @@ function generateSlug(name: string): string {
 /**
  * Generate unique slug
  */
-async function generateUniqueSlug(baseSlug: string):Promise<string> {
+async function generateUniqueSlug(baseSlug: string): Promise<string> {
   let slug = baseSlug;
   let count = 1;
 
@@ -77,7 +77,7 @@ export class OrgService {
     const org = await OrgModel.create({
       name: data.name,
       slug,
-      ownerId: new Types.ObjectId(userId)
+      ownerId: new Types.ObjectId(userId),
     });
 
     return this.toResponse(org);
@@ -92,5 +92,40 @@ export class OrgService {
       createdAt: org.createdAt,
       updatedAt: org.updatedAt,
     };
+  }
+
+  /**
+   * Check if user is a member of the organization
+   */
+  private async isOrgMember(userId: string, orgId: string): Promise<boolean> {
+    const member = await MemberModel.findOne({
+      userId: new Types.ObjectId(userId),
+      orgId: new Types.ObjectId(orgId),
+    }).lean();
+
+    return !!member;
+  }
+
+  /**
+   * Get organization by Id (with ownership checking)
+   */
+  async getOrgById(userId: string, orgId: string): Promise<OrgResponse> {
+    if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(orgId)) {
+      throw new OrgError(400, "Invalid ID format");
+    }
+
+    const org = await OrgModel.findById(orgId);
+
+    if (!org) {
+      throw new OrgError(404, "Organization not found");
+    }
+
+    const isOwner = String(org.ownerId) === userId;
+    const isMember = await this.isOrgMember(userId, orgId);
+    if (!isOwner && !isMember) {
+      throw new OrgError(403, "You don't have access to this organization");
+    }
+
+    return this.toResponse(org);
   }
 }
