@@ -16,6 +16,7 @@
     "@fastify/jwt": "^10.0.0",
     "@fastify/multipart": "^9.3.0",
     "@fastify/rate-limit": "^10.3.0",
+    "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.63.1",
     "cloudinary": "^2.8.0",
@@ -31,6 +32,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
