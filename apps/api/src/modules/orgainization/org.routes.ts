@@ -7,7 +7,19 @@ export default async function orgRoutes(app: FastifyInstance) {
   const controller = new OrgController(service)
 
   // Create organization
-  app.post("/create", {preHandler: [app.authenticate]}, controller.createOrg)
+  app.post("/create", {preHandler: [app.authenticate]}, controller.createOrg);
+
+  // Get organization by ID
+  app.get("/org/:id", {preHandler: [app.authenticate]}, controller.getOrgById);
+
+  // Get organizations list
+  app.get("all-orgs/", {preHandler: [app.authenticate]}, controller.getOrgs);
+
+  // Update organization
+  app.put("/:id", {preHandler: [app.authenticate]}, controller.updateOrg);
+
+  // Delete organization
+  app.delete("/:id", {preHandler: [app.authenticate]}, controller.deleteOrg);
 
 }
 
