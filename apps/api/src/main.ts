@@ -12,6 +12,7 @@ import profileRoutes from "./routes/profile.routes.js";
 import monitorRoutes from "./routes/monitor.routes.js";
 import memberRoutes from "./routes/member.routes.js";
 import organizationRoutes from "./routes/organization.routes.js";
+import projectRoutes from "./routes/project.routes.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -66,6 +67,9 @@ export async function createServer() {
 
   // Register organization routes
   await app.register(organizationRoutes);
+
+  // Register project routes
+  await app.register(projectRoutes);
 
   return app;
 }
