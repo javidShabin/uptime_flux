@@ -3,7 +3,7 @@ import { Header } from '@/components/Header'
 
 export const MainLayout = () => {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className=" bg-slate-950">
       <Header />
       <main>
         <Outlet />
