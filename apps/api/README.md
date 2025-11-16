@@ -28,11 +28,15 @@
 - 🔒 **Secure**: OTP-based email verification for user registration
 - 📧 **Email Verification**: Secure account creation with OTP codes
 - 🔐 **JWT Authentication**: Token-based authentication with refresh tokens
-- 📊 **Monitoring**: Health check endpoints
+- 📊 **Uptime Monitoring**: Comprehensive monitoring system with HTTP/HTTPS and TCP checks
 - 🔄 **Queue System**: BullMQ for background jobs
 - 💾 **Database**: MongoDB with Mongoose ODM
 - 🚀 **Cache**: Redis for caching and session management
 - 🔥 **Hot Reload**: Development server with auto-reload
+- 🌐 **Multi-Protocol**: Support for HTTP, HTTPS, TCP, and PING monitoring
+- 🔔 **TLS Validation**: Automatic SSL/TLS certificate expiration monitoring
+- 🏷️ **Tagging System**: Organize monitors with tags
+- ⏸️ **Pause/Resume**: Control monitor execution with pause functionality
 
 ## 🛠 Tech Stack
 
@@ -351,6 +355,277 @@ This endpoint adds a test job to the `monitor-run` queue with the following data
 
 The worker will process this job and perform an HTTP GET request to the specified URL.
 
+### Monitors
+
+The monitor module provides comprehensive uptime monitoring capabilities with support for multiple protocols and advanced features.
+
+#### Create Monitor
+
+Create a new uptime monitor.
+
+**Endpoint:** `POST /monitors`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+  "name": "My Website",
+  "type": "https",
+  "target": "https://example.com",
+  "scheduleSec": 300,
+  "timeoutMs": 5000,
+  "expectedStatus": "200-399",
+  "verifyTls": true,
+  "tlsThresholdDays": 30,
+  "tags": ["production", "critical"],
+  "isPaused": false,
+  "projectId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Monitor Types:**
+- `http` - HTTP monitoring
+- `https` - HTTPS monitoring with TLS validation
+- `tcp` - TCP port connectivity check
+- `ping` - ICMP ping (future implementation)
+
+**Field Descriptions:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Monitor display name (1-100 chars) |
+| `type` | enum | Yes | Monitor type: `http`, `https`, `tcp`, `ping` |
+| `target` | string | Yes | URL (for HTTP/HTTPS) or `host:port` (for TCP) |
+| `scheduleSec` | number | Yes | Check interval in seconds (min: 30, default: 300) |
+| `timeoutMs` | number | Yes | Request timeout in milliseconds (min: 1000, max: 60000, default: 5000) |
+| `expectedStatus` | string | No | Expected HTTP status code or range (e.g., `"200"` or `"200-399"`) |
+| `verifyTls` | boolean | No | Verify TLS certificate (default: `true`) |
+| `tlsThresholdDays` | number | No | Alert if TLS expires within days (1-365) |
+| `tags` | string[] | No | Tags for organization (default: `[]`) |
+| `isPaused` | boolean | No | Pause monitoring (default: `false`) |
+| `projectId` | string | No | Optional project/workspace ID |
+| `heartbeatToken` | string | No | Optional heartbeat token for authenticated checks |
+
+**Response (201 Created):**
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "userId": "507f1f77bcf86cd799439012",
+  "name": "My Website",
+  "type": "https",
+  "target": "https://example.com",
+  "scheduleSec": 300,
+  "timeoutMs": 5000,
+  "expectedStatus": "200-399",
+  "verifyTls": true,
+  "tlsThresholdDays": 30,
+  "tags": ["production", "critical"],
+  "isPaused": false,
+  "createdAt": "2024-01-01T12:00:00.000Z",
+  "updatedAt": "2024-01-01T12:00:00.000Z"
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/monitors \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "My Website",
+    "type": "https",
+    "target": "https://example.com",
+    "scheduleSec": 300,
+    "timeoutMs": 5000
+  }'
+```
+
+#### Get Monitor by ID
+
+Retrieve a specific monitor by ID.
+
+**Endpoint:** `GET /monitors/:id`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "userId": "507f1f77bcf86cd799439012",
+  "name": "My Website",
+  "type": "https",
+  "target": "https://example.com",
+  "scheduleSec": 300,
+  "timeoutMs": 5000,
+  "expectedStatus": "200-399",
+  "verifyTls": true,
+  "tlsThresholdDays": 30,
+  "tags": ["production", "critical"],
+  "isPaused": false,
+  "createdAt": "2024-01-01T12:00:00.000Z",
+  "updatedAt": "2024-01-01T12:00:00.000Z"
+}
+```
+
+**Error Responses:**
+- `404 Not Found`: Monitor not found or user doesn't have access
+
+**Example:**
+
+```bash
+curl http://localhost:3000/monitors/507f1f77bcf86cd799439011 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### List Monitors
+
+Get a paginated list of monitors with optional filtering.
+
+**Endpoint:** `GET /monitors`
+
+**Authentication:** Required
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 10) |
+| `type` | enum | Filter by monitor type (`http`, `https`, `tcp`, `ping`) |
+| `isPaused` | boolean | Filter by pause status (`true` or `false`) |
+| `projectId` | string | Filter by project ID |
+| `tags` | string | Comma-separated tags to filter by |
+| `search` | string | Search in monitor name or target |
+
+**Response (200 OK):**
+
+```json
+{
+  "monitors": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "My Website",
+      "type": "https",
+      "target": "https://example.com",
+      "isPaused": false,
+      "createdAt": "2024-01-01T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+**Example:**
+
+```bash
+# Get all monitors
+curl http://localhost:3000/monitors \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Filter by type and pagination
+curl "http://localhost:3000/monitors?type=https&page=1&limit=20" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Search monitors
+curl "http://localhost:3000/monitors?search=production" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Update Monitor
+
+Update an existing monitor.
+
+**Endpoint:** `PUT /monitors/:id`
+
+**Authentication:** Required
+
+**Request Body:** (All fields optional)
+
+```json
+{
+  "name": "Updated Name",
+  "scheduleSec": 600,
+  "timeoutMs": 10000,
+  "isPaused": true
+}
+```
+
+**Response (200 OK):** Returns updated monitor object
+
+**Error Responses:**
+- `404 Not Found`: Monitor not found or user doesn't have access
+
+**Example:**
+
+```bash
+curl -X PUT http://localhost:3000/monitors/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Updated Name",
+    "scheduleSec": 600
+  }'
+```
+
+#### Delete Monitor
+
+Delete a monitor.
+
+**Endpoint:** `DELETE /monitors/:id`
+
+**Authentication:** Required
+
+**Response (204 No Content):** Empty response on success
+
+**Error Responses:**
+- `404 Not Found`: Monitor not found or user doesn't have access
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:3000/monitors/507f1f77bcf86cd799439011 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Toggle Pause Status
+
+Pause or resume a monitor.
+
+**Endpoint:** `PATCH /monitors/:id/pause`
+
+**Authentication:** Required
+
+**Response (200 OK):** Returns updated monitor object with toggled `isPaused` status
+
+**Example:**
+
+```bash
+curl -X PATCH http://localhost:3000/monitors/507f1f77bcf86cd799439011/pause \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Monitor Features:**
+
+- **User Ownership**: All monitors are scoped to the authenticated user
+- **Multi-Protocol Support**: HTTP, HTTPS, TCP, and PING monitoring
+- **TLS Certificate Monitoring**: Automatic SSL/TLS expiration tracking
+- **Status Code Validation**: Custom expected status code ranges
+- **Tagging System**: Organize monitors with custom tags
+- **Pause/Resume**: Temporarily disable monitoring without deletion
+- **Pagination & Filtering**: Efficient list operations with search
+- **Project Organization**: Optional project/workspace grouping
+
 ## 📁 Project Structure
 
 ```
@@ -361,22 +636,39 @@ apps/api/
 │   │   └── env.ts           # Environment validation (Zod)
 │   ├── jobs/                # Background jobs
 │   ├── modules/             # Feature modules
-│   │   └── authentication/  # Authentication module
-│   │       ├── auth.controller.ts      # Request handlers
-│   │       ├── auth.service.ts          # Business logic
-│   │       ├── auth.model.ts            # User model
-│   │       ├── auth.routes.ts           # Route definitions
-│   │       ├── auth.schemas.ts          # Request validation schemas
-│   │       ├── auth.errors.ts           # Custom error classes
-│   │       ├── otp.model.ts             # OTP model
-│   │       ├── pending-registration.model.ts  # Pending registration model
-│   │       └── email.service.ts        # Email service
+│   │   ├── authentication/  # Authentication module
+│   │   │   ├── auth.controller.ts      # Request handlers
+│   │   │   ├── auth.service.ts          # Business logic
+│   │   │   ├── auth.model.ts            # User model
+│   │   │   ├── auth.routes.ts           # Route definitions
+│   │   │   ├── auth.schemas.ts          # Request validation schemas
+│   │   │   ├── auth.errors.ts           # Custom error classes
+│   │   │   ├── otp.model.ts             # OTP model
+│   │   │   ├── pending-registration.model.ts  # Pending registration model
+│   │   │   └── email.service.ts        # Email service
+│   │   ├── profile/         # User profile module
+│   │   │   ├── profile.controller.ts
+│   │   │   ├── profile.service.ts
+│   │   │   ├── profile.model.ts
+│   │   │   ├── profile.routes.ts
+│   │   │   ├── profile.schemas.ts
+│   │   │   └── profile.errors.ts
+│   │   └── monitor/         # Uptime monitoring module
+│   │       ├── monitor.controller.ts    # Request handlers
+│   │       ├── monitor.service.ts       # Business logic
+│   │       ├── monitor.model.ts         # Monitor model
+│   │       ├── monitor.routes.ts        # Route definitions
+│   │       ├── monitor.schemas.ts       # Request validation schemas
+│   │       ├── monitor.errors.ts        # Custom error classes
+│   │       ├── httpChecker.ts           # HTTP/HTTPS health check utility
+│   │       └── tcpChecker.ts            # TCP health check utility
 │   ├── plugins/             # Fastify plugins
 │   │   ├── db.ts            # MongoDB connection plugin
 │   │   ├── jwt.ts           # JWT authentication plugin
 │   │   └── redis.ts         # Redis connection plugin
 │   ├── queues/              # BullMQ queue definitions
-│   │   └── index.ts         # Monitor queue setup
+│   │   ├── index.ts         # Queue exports
+│   │   └── monitor.queue.ts # Monitor queue configuration
 │   ├── routes/              # API route handlers
 │   ├── utils/               # Utility functions
 │   ├── workers/             # Queue workers (BullMQ)
@@ -419,6 +711,34 @@ The authentication module provides secure user registration with OTP-based email
   - OTP codes hashed before storage
   - Automatic cleanup of expired pending registrations
   - Email verification required before account creation
+
+### Monitor Module
+
+The monitor module provides comprehensive uptime monitoring capabilities:
+
+- **Multi-Protocol Support**:
+  - HTTP/HTTPS monitoring with status code validation
+  - TCP port connectivity checks
+  - TLS certificate expiration monitoring
+  - Future: ICMP ping support
+- **Features**:
+  - User-scoped monitors (each user sees only their monitors)
+  - Configurable check intervals (minimum 30 seconds)
+  - Custom timeout settings (1-60 seconds)
+  - Expected status code validation (single or range)
+  - TLS certificate expiration alerts
+  - Tag-based organization
+  - Pause/resume functionality
+  - Project/workspace grouping (optional)
+- **Data Models**:
+  - `Monitor` - Monitor configuration and metadata
+- **Utilities**:
+  - `httpChecker` - HTTP/HTTPS health check with TLS validation
+  - `tcpChecker` - TCP port connectivity checker
+- **Queue Integration**:
+  - Monitors are processed via BullMQ queue system
+  - Jobs are enqueued based on monitor schedule
+  - Worker processes handle actual health checks
 
 ### Code Style
 

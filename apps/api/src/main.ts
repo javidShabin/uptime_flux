@@ -9,6 +9,7 @@ import cloudinaryPlugin from "./plugins/cloudinary.js";
 import multipart from "@fastify/multipart";
 import authenticationRoutes from "./modules/authentication/auth.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";
+import monitorRoutes from "./modules/monitor/monitor.routes.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -54,6 +55,9 @@ export async function createServer() {
 
   // Register profile routes
   await app.register(profileRoutes, { prefix: "/profile" });
+
+  // Register monitor routes
+  await app.register(monitorRoutes, { prefix: "/monitors" });
 
   return app;
 }

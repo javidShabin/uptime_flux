@@ -25,10 +25,19 @@
 
 UptimeFlux is a comprehensive uptime monitoring solution built as a monorepo, consisting of:
 
-- **API** - Fast REST API built with Fastify (Port 3000)
+- **API** - Fast REST API built with Fastify (Port 3000) with full CRUD operations for monitors
 - **Web** - Modern React frontend with Vite (Port 5173)
 - **Worker** - Background job processor with BullMQ for monitoring tasks
 - **Shared Packages** - Reusable TypeScript packages
+
+### Key Features
+
+- 🔐 **Secure Authentication** - OTP-based email verification
+- 📊 **Uptime Monitoring** - Multi-protocol monitoring (HTTP/HTTPS/TCP)
+- 🔔 **TLS Monitoring** - Automatic SSL/TLS certificate expiration tracking
+- 🏷️ **Organization** - Tag-based monitor organization
+- ⏸️ **Control** - Pause/resume monitors on demand
+- 📈 **Scalable** - Queue-based architecture for high throughput
 
 ## 🏗 Architecture
 
@@ -132,8 +141,13 @@ UptimeFlux/
 │   ├── api/              # Fastify REST API
 │   │   ├── src/
 │   │   │   ├── config/   # Configuration
+│   │   │   ├── modules/  # Feature modules
+│   │   │   │   ├── authentication/  # Auth module
+│   │   │   │   ├── profile/         # Profile module
+│   │   │   │   └── monitor/         # Monitor module
 │   │   │   ├── plugins/  # Fastify plugins
-│   │   │   ├── routes/   # API routes
+│   │   │   ├── queues/   # BullMQ queues
+│   │   │   ├── workers/  # Queue workers
 │   │   │   └── main.ts   # Entry point
 │   │   └── README.md
 │   ├── web/              # React frontend
@@ -241,10 +255,57 @@ The API uses OTP-based email verification for user registration.
 2. User verifies OTP → Account is created
 
 **Endpoints:**
-- `POST /register` - Register a new user (requires OTP verification)
-- `POST /verify-otp` - Verify OTP and create account
+- `POST /auth/register` - Register a new user (requires OTP verification)
+- `POST /auth/verify-otp` - Verify OTP and create account
+- `POST /auth/login` - Login and get access tokens
+- `POST /auth/refresh` - Refresh access token
 
 For detailed authentication documentation, see [API README](apps/api/README.md).
+
+### Monitors
+
+Comprehensive uptime monitoring with multi-protocol support.
+
+**Endpoints:**
+- `GET /monitors` - List monitors with pagination and filters
+- `GET /monitors/:id` - Get monitor by ID
+- `POST /monitors` - Create new monitor
+- `PUT /monitors/:id` - Update monitor
+- `DELETE /monitors/:id` - Delete monitor
+- `PATCH /monitors/:id/pause` - Toggle pause status
+
+**Monitor Types:**
+- `http` - HTTP monitoring
+- `https` - HTTPS monitoring with TLS validation
+- `tcp` - TCP port connectivity check
+- `ping` - ICMP ping (future)
+
+**Features:**
+- User-scoped monitors (automatic ownership validation)
+- Configurable check intervals (min: 30 seconds)
+- Custom timeout settings (1-60 seconds)
+- Status code validation (single or range)
+- TLS certificate expiration monitoring
+- Tag-based organization
+- Pause/resume functionality
+- Project/workspace grouping
+
+**Example - Create Monitor:**
+
+```bash
+curl -X POST http://localhost:3000/monitors \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "name": "My Website",
+    "type": "https",
+    "target": "https://example.com",
+    "scheduleSec": 300,
+    "timeoutMs": 5000
+  }'
+```
+
+For detailed monitor documentation, see [API README](apps/api/README.md#monitors).
 
 ### Test Job
 
