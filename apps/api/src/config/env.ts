@@ -24,6 +24,7 @@ const envSchema = z.object({
   CLOUD_NAME: z.string().min(1, "CLOUD_NAME is required"),
   CLOUD_API_KEY: z.string().min(1, "CLOUD_API_KEY is required"),
   CLOUD_API_SECRET: z.string().min(1, "CLOUD_API_SECRET is required"),
+  TWO_FACTOR_ENCRYPTION_KEY: z.string().min(32, "TWO_FACTOR_ENCRYPTION_KEY must be at least 32 characters").optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

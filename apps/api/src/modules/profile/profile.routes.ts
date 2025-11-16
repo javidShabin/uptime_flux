@@ -14,5 +14,10 @@ export default async function profileRoutes(app: FastifyInstance) {
 
   // Update current user's profile (supports multipart/form-data for avatar upload)
   app.put("/me", { preHandler: [app.authenticate] }, controller.updateProfile);
+
+  // 2FA endpoints
+  app.post("/2fa/setup", { preHandler: [app.authenticate] }, controller.setupTwoFactor);
+  app.post("/2fa/verify", { preHandler: [app.authenticate] }, controller.verifyTwoFactor);
+  app.post("/2fa/disable", { preHandler: [app.authenticate] }, controller.disableTwoFactor);
 }
 
