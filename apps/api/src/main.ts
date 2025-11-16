@@ -59,6 +59,7 @@ export async function createServer() {
   // Register monitor routes
   await app.register(monitorRoutes, { prefix: "/monitors" });
 
+  
   return app;
 }
 
