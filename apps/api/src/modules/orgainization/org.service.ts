@@ -128,4 +128,78 @@ export class OrgService {
 
     return this.toResponse(org);
   }
+
+  /**
+   * Get organizations where user is owner or member
+   */
+  async getOrgs(userId: string, query: GetOrgsQueryInput): Promise<OrgsListResponse> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new OrgError(400, "Invalid user ID format");
+    }
+
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    // Get orgs where user is owner
+    const ownedOrgs = await OrgModel.find({ ownerId: new Types.ObjectId(userId) })
+      .select("_id")
+      .lean();
+
+    const ownedOrgIds = ownedOrgs.map((org) => org._id);
+
+    // Get orgs where user is a member (through projects)
+    const memberRecords = await MemberModel.find({
+      userId: new Types.ObjectId(userId),
+    })
+      .select("projectId")
+      .lean();
+
+    const projectIds = memberRecords.map((m) => m.projectId);
+    const projects = await ProjectModel.find({
+      _id: { $in: projectIds },
+    })
+      .select("orgId")
+      .lean();
+
+    const memberOrgIds = [...new Set(projects.map((p) => String(p.orgId)))];
+
+    // Combine and get unique org IDs
+    const allOrgIds = [
+      ...ownedOrgIds.map((id) => String(id)),
+      ...memberOrgIds,
+    ];
+    const uniqueOrgIds = [...new Set(allOrgIds)].map((id) => new Types.ObjectId(id));
+
+    // Get total count
+    const total = await OrgModel.countDocuments({
+      _id: { $in: uniqueOrgIds },
+    });
+
+    // Get orgs
+    const orgs = await OrgModel.find({
+      _id: { $in: uniqueOrgIds },
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    return {
+      orgs: orgs.map((org: any) => ({
+        id: String(org._id),
+        name: org.name,
+        slug: org.slug,
+        ownerId: String(org.ownerId),
+        createdAt: org.createdAt,
+        updatedAt: org.updatedAt,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }
