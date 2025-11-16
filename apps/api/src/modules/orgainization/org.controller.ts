@@ -40,5 +40,16 @@ export class OrgController {
       this.handleError(error, request, reply);
     }
   }
+
+  getOrgById = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as {userId: string}).userId
+      const params = getOrgByIdSchema.parse(request.body)
+      const org = this.orgService.getOrgById(userId, params.id)
+      return reply.code(200).send(org)
+    } catch (error) {
+      this.handleError(error, request, reply)
+    }
+  }
 }
 
