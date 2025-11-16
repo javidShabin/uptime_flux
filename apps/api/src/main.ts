@@ -7,9 +7,11 @@ import jwtPlugin from "./plugins/jwt.js";
 import cookiePlugin from "./plugins/cookie.js";
 import cloudinaryPlugin from "./plugins/cloudinary.js";
 import multipart from "@fastify/multipart";
-import authenticationRoutes from "./modules/authentication/auth.routes.js";
-import profileRoutes from "./modules/profile/profile.routes.js";
-import monitorRoutes from "./modules/monitor/monitor.routes.js";
+import authenticationRoutes from "./routes/authentication.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
+import monitorRoutes from "./routes/monitor.routes.js";
+import memberRoutes from "./routes/member.routes.js";
+import organizationRoutes from "./routes/organization.routes.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -51,13 +53,19 @@ export async function createServer() {
   });
 
   // Register authentication routes
-  await app.register(authenticationRoutes, { prefix: "/auth" });
+  await app.register(authenticationRoutes);
 
   // Register profile routes
-  await app.register(profileRoutes, { prefix: "/profile" });
+  await app.register(profileRoutes);
 
   // Register monitor routes
-  await app.register(monitorRoutes, { prefix: "/monitors" });
+  await app.register(monitorRoutes);
+
+  // Register member routes
+  await app.register(memberRoutes);
+
+  // Register organization routes
+  await app.register(organizationRoutes);
 
   return app;
 }
