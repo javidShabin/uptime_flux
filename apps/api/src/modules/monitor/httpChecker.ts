@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import https from "https";
+import tls from "tls";
 
 export interface HttpCheckResult {
   status: "up" | "down";
@@ -57,7 +58,7 @@ async function getTlsInfo(url: string, timeoutMs: number): Promise<{
       const port = urlObj.port ? parseInt(urlObj.port, 10) : 443;
       const host = urlObj.hostname;
 
-      const socket = https.connect(
+      const socket = tls.connect(
         {
           host,
           port,
