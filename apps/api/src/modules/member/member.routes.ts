@@ -5,7 +5,17 @@ import { requireProjectMember } from "../rbac/requireRole.js";
 import { Role } from "../rbac/permissions.js";
 
 export default async function memberRoutes(app: FastifyInstance) {
+    const service = new MemberService();
+    const controller = new MemberController(service);
   
+    // Create member (add user to project)
+    app.post(
+      "/projects/:projectId/members",
+      {
+        preHandler: [app.authenticate, requireProjectMember(Role.OWNER)],
+      },
+      controller.createMember
+    );
   
 }
 
