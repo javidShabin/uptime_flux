@@ -13,6 +13,7 @@ import monitorRoutes from "./routes/monitor.routes.js";
 import memberRoutes from "./routes/member.routes.js";
 import organizationRoutes from "./routes/organization.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import summaryRoutes from "./modules/summary/summary.routes.js";
 import { createSocketServer } from "./modules/realtime/socket.js";
 
 export async function createServer() {
@@ -71,6 +72,9 @@ export async function createServer() {
 
   // Register project routes
   await app.register(projectRoutes);
+
+  // Register summary routes
+  await app.register(summaryRoutes);
 
   // Initialize Socket.IO server
   await createSocketServer(app);
