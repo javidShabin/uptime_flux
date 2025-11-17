@@ -47,7 +47,7 @@ export class MemberController {
       this.handleError(error, request, reply);
     }
   };
-  
+
    /**
    * Get members by project
    */
@@ -58,6 +58,26 @@ export class MemberController {
       const query = getMembersQuerySchema.parse(request.query);
       const result = await this.memberService.getMembersByProject(userId, params.projectId, query);
       return reply.code(200).send(result);
+    } catch (error) {
+      this.handleError(error, request, reply);
+    }
+  };
+
+  /**
+   * Update member role
+   */
+  updateMember = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as { userId: string }).userId;
+      const params = updateMemberByIdSchema.parse(request.params);
+      const data = updateMemberSchema.parse(request.body);
+      const member = await this.memberService.updateMember(
+        userId,
+        params.projectId,
+        params.memberId,
+        data
+      );
+      return reply.code(200).send(member);
     } catch (error) {
       this.handleError(error, request, reply);
     }

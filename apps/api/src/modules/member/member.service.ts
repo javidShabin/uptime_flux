@@ -228,5 +228,109 @@ export class MemberService {
       updatedAt: member.updatedAt,
     };
   }
+
+   /**
+   * Update member role
+   */
+   async updateMember(
+    userId: string,
+    projectId: string,
+    memberId: string,
+    data: UpdateMemberInput
+  ): Promise<MemberResponse> {
+    if (
+      !Types.ObjectId.isValid(userId) ||
+      !Types.ObjectId.isValid(projectId) ||
+      !Types.ObjectId.isValid(memberId)
+    ) {
+      throw new MemberError(400, "Invalid ID format");
+    }
+
+    // Verify project exists
+    const project = await ProjectModel.findById(projectId).lean();
+    if (!project) {
+      throw new MemberError(404, "Project not found");
+    }
+
+    // Find member to update
+    const memberToUpdate = await MemberModel.findById(memberId).lean();
+    if (!memberToUpdate) {
+      throw new MemberError(404, "Member not found");
+    }
+
+    if (String(memberToUpdate.projectId) !== projectId) {
+      throw new MemberError(400, "Member does not belong to this project");
+    }
+
+    // Check if user can manage members
+    const org = await OrgModel.findById(project.orgId).lean();
+    if (!org) {
+      throw new MemberError(404, "Organization not found");
+    }
+
+    const isOrgOwner = String(org.ownerId) === userId;
+    let userRole: Role | null = null;
+
+    if (!isOrgOwner) {
+      const userMember = await MemberModel.findOne({
+        projectId: new Types.ObjectId(projectId),
+        userId: new Types.ObjectId(userId),
+      }).lean();
+
+      if (!userMember) {
+        throw new MemberError(403, "You don't have permission to update members");
+      }
+
+      userRole = userMember.role as Role;
+
+      // Only owners can manage members
+      if (userRole !== Role.OWNER) {
+        throw new MemberError(403, "Only project owners can update member roles");
+      }
+    } else {
+      userRole = Role.OWNER;
+    }
+
+    // Validate role assignment
+    const validation = validateRoleAssignment(userRole, data.role);
+    if (!validation.valid) {
+      throw new MemberError(403, validation.error || "Cannot assign this role");
+    }
+
+    // Prevent demoting the last owner
+    if (memberToUpdate.role === Role.OWNER && data.role !== Role.OWNER) {
+      const ownerCount = await MemberModel.countDocuments({
+        projectId: new Types.ObjectId(projectId),
+        role: Role.OWNER,
+      });
+
+      if (ownerCount <= 1) {
+        throw new MemberError(400, "Cannot remove the last owner from the project");
+      }
+    }
+
+    // Update member
+    const member = await MemberModel.findByIdAndUpdate(
+      memberId,
+      { role: data.role },
+      { new: true }
+    );
+
+    if (!member) {
+      throw new MemberError(404, "Member not found");
+    }
+
+    // Get user info
+    const targetUser = await UserModel.findById(member.userId)
+      .select("email firstName lastName")
+      .lean();
+
+    return this.toResponse(
+      member,
+      targetUser?.email,
+      targetUser ? `${targetUser.firstName} ${targetUser.lastName}` : undefined
+    );
+  }
+
 }
 
