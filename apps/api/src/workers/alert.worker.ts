@@ -22,6 +22,15 @@ const redis = new Redis(env.REDIS_URL, {
   },
 });
 
+// Create Redis pub client for WebSocket events
+// @ts-expect-error - ioredis default export type issue with NodeNext module resolution
+const redisPub = new Redis(env.REDIS_URL, {
+  maxRetriesPerRequest: 5,
+  retryStrategy(times: number) {
+    return Math.min(times * 50, 2000);
+  },
+});
+
 new Worker(
   alertQueue.name,
   async (job) => {
@@ -85,6 +94,22 @@ new Worker(
 
     // Wait for all notifications to complete (or fail gracefully)
     await Promise.allSettled(notificationPromises);
+
+    // Publish incident:updated event via Redis Pub/Sub (for escalations)
+    if (event === "escalated" && projectId) {
+      const incidentPayload = {
+        incidentId: incident._id.toString(),
+        monitorId: monitor._id.toString(),
+        projectId: projectId,
+        status: incident.status,
+        timestamp: new Date().toISOString(),
+        reason: incident.reason || undefined,
+      };
+      await redisPub.publish(
+        `ws:project:${projectId}`,
+        JSON.stringify({ event: "incident:updated", data: incidentPayload })
+      );
+    }
 
     console.log(
       `[Alert Worker] Processed alert for incident ${incidentId}, event: ${event}, channels: ${notificationPromises.length}`

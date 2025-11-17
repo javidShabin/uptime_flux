@@ -22,6 +22,15 @@ const redis = new Redis(env.REDIS_URL, {
   },
 });
 
+// Create Redis pub client for WebSocket events
+// @ts-expect-error - ioredis default export type issue with NodeNext module resolution
+const redisPub = new Redis(env.REDIS_URL, {
+  maxRetriesPerRequest: 5,
+  retryStrategy(times: number) {
+    return Math.min(times * 50, 2000);
+  },
+});
+
 new Worker(
   monitorQueue.name,
   async job => {
@@ -77,6 +86,23 @@ new Worker(
       region: "in1"
     });
 
+    // Publish check:new event via Redis Pub/Sub
+    if (monitor.projectId) {
+      const checkPayload = {
+        monitorId: String(monitor._id),
+        projectId: String(monitor.projectId),
+        status: checkDoc.status,
+        latencyMs: checkDoc.latencyMs,
+        httpStatus: checkDoc.httpStatus,
+        errorText: checkDoc.errorText || undefined,
+        ts: checkDoc.ts?.toISOString() || new Date().toISOString(),
+      };
+      await redisPub.publish(
+        `ws:project:${monitor.projectId}`,
+        JSON.stringify({ event: "check:new", data: checkPayload })
+      );
+    }
+
     // Alert policy evaluation
     const alertPolicyService = new AlertPolicyService();
     const incidentService = new IncidentService();
@@ -107,12 +133,30 @@ new Worker(
       const policy = await alertPolicyService.getPolicyForMonitor(monitor);
       if (policy) {
         const incidentDoc = await IncidentModel.findById(incidentEvent.incidentId);
-        if (incidentDoc) {
+        if (incidentDoc && monitor.projectId) {
           await alertService.enqueueAlert(
             incidentDoc,
             monitor,
             policy,
             incidentEvent.type
+          );
+
+          // Publish incident event via Redis Pub/Sub
+          const incidentPayload = {
+            incidentId: String(incidentDoc._id),
+            monitorId: String(monitor._id),
+            projectId: String(monitor.projectId),
+            status: incidentDoc.status,
+            timestamp: incidentDoc.status === "resolved" 
+              ? (incidentDoc.resolvedAt?.toISOString() || new Date().toISOString())
+              : incidentDoc.openedAt.toISOString(),
+            reason: incidentDoc.reason || undefined,
+          };
+
+          const eventName = incidentEvent.type === "opened" ? "incident:opened" : "incident:resolved";
+          await redisPub.publish(
+            `ws:project:${monitor.projectId}`,
+            JSON.stringify({ event: eventName, data: incidentPayload })
           );
         }
       }

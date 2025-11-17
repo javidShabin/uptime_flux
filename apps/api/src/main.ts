@@ -13,6 +13,7 @@ import monitorRoutes from "./routes/monitor.routes.js";
 import memberRoutes from "./routes/member.routes.js";
 import organizationRoutes from "./routes/organization.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import { createSocketServer } from "./modules/realtime/socket.js";
 
 export async function createServer() {
   const app = Fastify({
@@ -70,6 +71,9 @@ export async function createServer() {
 
   // Register project routes
   await app.register(projectRoutes);
+
+  // Initialize Socket.IO server
+  await createSocketServer(app);
 
   return app;
 }
