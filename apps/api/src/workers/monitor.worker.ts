@@ -6,7 +6,8 @@ import { MonitorModel, type IMonitor } from "../modules/monitor/monitor.model.js
 import { CheckModel } from "../modules/monitor/check.model.js";
 import { checkHttp } from "../modules/monitor/httpChecker.js";
 import { checkTcp, parseTcpTarget } from "../modules/monitor/tcpChecker.js";
-import { evaluateIncident } from "../modules/monitor/incident.service.js";
+import { IncidentService } from "../modules/monitor/incident.service.js";
+import { AlertPolicyService } from "../modules/alertPolicy/alertPolicy.service.js";
 
 console.log("🚀 UptimeFlux Monitor Worker Running...");
 
@@ -74,8 +75,23 @@ new Worker(
       region: "in1"
     });
 
-    // Incident evaluation (open/resolve)
-    await evaluateIncident(monitor, checkDoc);
+    // Alert policy evaluation
+    const alertPolicyService = new AlertPolicyService();
+    const incidentService = new IncidentService();
+    const lastChecks = await CheckModel.find({ monitorId: monitor._id })
+      .sort({ ts: -1 })
+      .limit(10)
+      .select("status ts")
+      .lean();
+
+    const policyResult = await alertPolicyService.evaluatePolicy(monitor, lastChecks);
+
+    // Handle incident based on policy evaluation
+    if (policyResult.action === "open") {
+      await incidentService.openIncident(monitor, checkDoc);
+    } else if (policyResult.action === "resolve") {
+      await incidentService.resolveIncident(monitor);
+    }
 
     // Schedule next run
     scheduleNext(monitor);
