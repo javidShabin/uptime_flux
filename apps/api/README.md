@@ -26,6 +26,7 @@
 
 - ⚡ **Fast**: Built on Fastify for high performance
 - 🔒 **Secure**: OTP-based email verification for user registration
+- 🛡️ **Security**: Helmet security headers, CORS protection, and rate limiting
 - 📧 **Email Verification**: Secure account creation with OTP codes
 - 🔐 **JWT Authentication**: Token-based authentication with refresh tokens
 - 📊 **Uptime Monitoring**: Comprehensive monitoring system with HTTP/HTTPS and TCP checks
@@ -37,6 +38,9 @@
 - 🔔 **TLS Validation**: Automatic SSL/TLS certificate expiration monitoring
 - 🏷️ **Tagging System**: Organize monitors with tags
 - ⏸️ **Pause/Resume**: Control monitor execution with pause functionality
+- 🚨 **Incident Management**: Automatic incident tracking with open/acknowledged/resolved states
+- 📋 **Alert Policies**: Configurable alert rules with multi-channel notifications (email, Telegram, WhatsApp, webhooks)
+- 🎯 **Error Handling**: Global error handler with standardized error responses
 
 ## 🛠 Tech Stack
 
@@ -330,6 +334,8 @@ curl -X POST http://localhost:3000/verify-otp \
 
 ### Test Job
 
+> ⚠️ **Development Only**: This endpoint is only available when `NODE_ENV=development`.
+
 Enqueue a test monitoring job to the worker queue.
 
 **Endpoint:** `POST /test-job`
@@ -354,6 +360,8 @@ This endpoint adds a test job to the `monitor-run` queue with the following data
 - `timeout`: 5000
 
 The worker will process this job and perform an HTTP GET request to the specified URL.
+
+**Note**: This endpoint is automatically disabled in production for security reasons.
 
 ### Monitors
 
@@ -626,6 +634,319 @@ curl -X PATCH http://localhost:3000/monitors/507f1f77bcf86cd799439011/pause \
 - **Pagination & Filtering**: Efficient list operations with search
 - **Project Organization**: Optional project/workspace grouping
 
+### Incidents
+
+The incident module provides automatic incident tracking when monitors fail. Incidents are automatically opened when monitors go down and resolved when they recover.
+
+#### List Incidents
+
+Get a paginated list of incidents with optional filtering.
+
+**Endpoint:** `GET /incidents`
+
+**Authentication:** Required
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 10) |
+| `projectId` | string | Filter by project ID |
+
+**Response (200 OK):**
+
+```json
+{
+  "incidents": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "monitorId": "507f1f77bcf86cd799439012",
+      "projectId": "507f1f77bcf86cd799439013",
+      "status": "open",
+      "reason": "Connection timeout",
+      "openedAt": "2024-01-01T12:00:00.000Z",
+      "acknowledgedAt": null,
+      "resolvedAt": null,
+      "acknowledgedBy": null,
+      "resolvedBy": null,
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2024-01-01T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+**Incident Statuses:**
+- `open` - Incident is active and unacknowledged
+- `acknowledged` - Incident has been acknowledged by a user
+- `resolved` - Incident has been resolved (automatically or manually)
+
+**Example:**
+
+```bash
+curl http://localhost:3000/incidents?page=1&limit=20 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Acknowledge Incident
+
+Manually acknowledge an incident to stop escalations.
+
+**Endpoint:** `POST /incidents/:id/ack`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "monitorId": "507f1f77bcf86cd799439012",
+  "status": "acknowledged",
+  "acknowledgedAt": "2024-01-01T12:05:00.000Z",
+  "acknowledgedBy": "507f1f77bcf86cd799439014"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Cannot acknowledge a resolved incident
+- `404 Not Found`: Incident not found
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/incidents/507f1f77bcf86cd799439011/ack \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Resolve Incident
+
+Manually resolve an incident.
+
+**Endpoint:** `POST /incidents/:id/resolve`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "monitorId": "507f1f77bcf86cd799439012",
+  "status": "resolved",
+  "resolvedAt": "2024-01-01T12:10:00.000Z",
+  "resolvedBy": "507f1f77bcf86cd799439014"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Incident is already resolved
+- `404 Not Found`: Incident not found
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/incidents/507f1f77bcf86cd799439011/resolve \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Incident Features:**
+
+- **Automatic Lifecycle**: Incidents are automatically opened when monitors fail and resolved when they recover
+- **One Active Incident**: Each monitor can only have one active incident at a time
+- **User Tracking**: Tracks which user acknowledged or resolved incidents
+- **Timestamps**: Records openedAt, acknowledgedAt, and resolvedAt timestamps
+- **Error Tracking**: Stores error messages/reasons for incidents
+
+### Alert Policies
+
+Alert policies define rules for when incidents should be opened or resolved, and configure notification channels for alerts.
+
+#### List Alert Policies
+
+Get all alert policies for a project.
+
+**Endpoint:** `GET /projects/:projectId/policies`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "policies": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "projectId": "507f1f77bcf86cd799439012",
+      "name": "Production Alert Policy",
+      "rules": {
+        "failConsecutive": 2,
+        "recoverConsecutive": 1,
+        "escalateAfterMin": 15
+      },
+      "channels": {
+        "email": ["admin@example.com", "team@example.com"],
+        "telegram": {
+          "botToken": "123456:ABC-DEF",
+          "chatId": "-1001234567890"
+        },
+        "webhook": ["https://example.com/webhook"]
+      },
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2024-01-01T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/projects/507f1f77bcf86cd799439012/policies \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Create Alert Policy
+
+Create a new alert policy for a project.
+
+**Endpoint:** `POST /projects/:projectId/policies`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+  "name": "Production Alert Policy",
+  "rules": {
+    "failConsecutive": 2,
+    "recoverConsecutive": 1,
+    "escalateAfterMin": 15
+  },
+  "channels": {
+    "email": ["admin@example.com"],
+    "telegram": {
+      "botToken": "123456:ABC-DEF",
+      "chatId": "-1001234567890"
+    },
+    "whatsapp": {
+      "phoneNumber": "+1234567890",
+      "apiKey": "your-api-key"
+    },
+    "webhook": ["https://example.com/webhook"]
+  }
+}
+```
+
+**Field Descriptions:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Policy name (1-100 chars) |
+| `rules.failConsecutive` | number | Yes | Number of consecutive DOWN checks to open incident (min: 1) |
+| `rules.recoverConsecutive` | number | Yes | Number of consecutive UP checks to resolve incident (min: 1) |
+| `rules.escalateAfterMin` | number | Yes | Minutes before escalating incident (min: 0) |
+| `channels.email` | string[] | Yes | Array of email addresses (at least one required) |
+| `channels.telegram` | object | No | Telegram bot configuration |
+| `channels.whatsapp` | object | No | WhatsApp API configuration |
+| `channels.webhook` | string[] | No | Array of webhook URLs |
+
+**Response (201 Created):** Returns created policy object
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:3000/projects/507f1f77bcf86cd799439012/policies \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Production Alert Policy",
+    "rules": {
+      "failConsecutive": 2,
+      "recoverConsecutive": 1,
+      "escalateAfterMin": 15
+    },
+    "channels": {
+      "email": ["admin@example.com"]
+    }
+  }'
+```
+
+#### Update Alert Policy
+
+Update an existing alert policy.
+
+**Endpoint:** `PATCH /policies/:id`
+
+**Authentication:** Required
+
+**Request Body:** (All fields optional)
+
+```json
+{
+  "name": "Updated Policy Name",
+  "rules": {
+    "failConsecutive": 3,
+    "recoverConsecutive": 2
+  },
+  "channels": {
+    "email": ["new-email@example.com"]
+  }
+}
+```
+
+**Response (200 OK):** Returns updated policy object
+
+**Error Responses:**
+- `404 Not Found`: Policy not found
+
+**Example:**
+
+```bash
+curl -X PATCH http://localhost:3000/policies/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "Updated Policy Name"
+  }'
+```
+
+#### Delete Alert Policy
+
+Delete an alert policy.
+
+**Endpoint:** `DELETE /policies/:id`
+
+**Authentication:** Required
+
+**Response (204 No Content):** Empty response on success
+
+**Error Responses:**
+- `404 Not Found`: Policy not found
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:3000/policies/507f1f77bcf86cd799439011 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Alert Policy Features:**
+
+- **Policy Evaluation**: Automatically evaluates policies based on consecutive check results
+- **Multi-Channel Notifications**: Support for email, Telegram, WhatsApp, and webhooks
+- **Configurable Rules**: Set fail/recover thresholds and escalation timing
+- **Project Scoping**: Policies are scoped to projects
+- **Unique Names**: Policy names must be unique within a project
+
 ## 📁 Project Structure
 
 ```
@@ -653,19 +974,34 @@ apps/api/
 │   │   │   ├── profile.routes.ts
 │   │   │   ├── profile.schemas.ts
 │   │   │   └── profile.errors.ts
-│   │   └── monitor/         # Uptime monitoring module
-│   │       ├── monitor.controller.ts    # Request handlers
-│   │       ├── monitor.service.ts       # Business logic
-│   │       ├── monitor.model.ts         # Monitor model
-│   │       ├── monitor.routes.ts        # Route definitions
-│   │       ├── monitor.schemas.ts       # Request validation schemas
-│   │       ├── monitor.errors.ts        # Custom error classes
-│   │       ├── httpChecker.ts           # HTTP/HTTPS health check utility
-│   │       └── tcpChecker.ts            # TCP health check utility
+│   │   ├── monitor/         # Uptime monitoring module
+│   │   │   ├── monitor.controller.ts    # Request handlers
+│   │   │   ├── monitor.service.ts       # Business logic
+│   │   │   ├── monitor.model.ts         # Monitor model
+│   │   │   ├── monitor.routes.ts        # Route definitions
+│   │   │   ├── monitor.schemas.ts       # Request validation schemas
+│   │   │   ├── monitor.errors.ts        # Custom error classes
+│   │   │   ├── check.model.ts           # Check result model
+│   │   │   ├── incident.model.ts        # Incident model
+│   │   │   ├── incident.service.ts     # Incident business logic
+│   │   │   ├── incident.controller.ts  # Incident request handlers
+│   │   │   ├── incident.routes.ts     # Incident route definitions
+│   │   │   ├── incident.schemas.ts     # Incident validation schemas
+│   │   │   ├── httpChecker.ts           # HTTP/HTTPS health check utility
+│   │   │   └── tcpChecker.ts            # TCP health check utility
+│   │   └── alertPolicy/     # Alert policy module
+│   │       ├── alertPolicy.model.ts     # Alert policy model
+│   │       ├── alertPolicy.service.ts  # Alert policy business logic
+│   │       ├── alertPolicy.controller.ts # Alert policy request handlers
+│   │       ├── alertPolicy.routes.ts   # Alert policy route definitions
+│   │       ├── alertPolicy.schemas.ts  # Alert policy validation schemas
+│   │       └── alertPolicy.errors.ts   # Custom error classes
 │   ├── plugins/             # Fastify plugins
 │   │   ├── db.ts            # MongoDB connection plugin
+│   │   ├── redis.ts         # Redis connection plugin
 │   │   ├── jwt.ts           # JWT authentication plugin
-│   │   └── redis.ts         # Redis connection plugin
+│   │   ├── cookie.ts        # Cookie plugin for secure cookie handling
+│   │   └── cloudinary.ts    # Cloudinary plugin for image management
 │   ├── queues/              # BullMQ queue definitions
 │   │   ├── index.ts         # Queue exports
 │   │   └── monitor.queue.ts # Monitor queue configuration
@@ -696,6 +1032,12 @@ The API uses a plugin-based architecture:
 - **MongoDB Plugin** (`plugins/db.ts`) - Handles MongoDB connection and lifecycle
 - **Redis Plugin** (`plugins/redis.ts`) - Manages Redis connection, exposes `app.redis`
 - **JWT Plugin** (`plugins/jwt.ts`) - JWT authentication with access and refresh tokens
+- **Cookie Plugin** (`plugins/cookie.ts`) - Secure cookie handling for refresh tokens
+- **Cloudinary Plugin** (`plugins/cloudinary.ts`) - Image upload and management
+- **Security Plugins**:
+  - **Helmet** - Security headers protection
+  - **CORS** - Cross-origin resource sharing configuration
+  - **Rate Limit** - Request rate limiting (100 requests per minute)
 
 ### Authentication Module
 
@@ -732,6 +1074,7 @@ The monitor module provides comprehensive uptime monitoring capabilities:
   - Project/workspace grouping (optional)
 - **Data Models**:
   - `Monitor` - Monitor configuration and metadata
+  - `Check` - Individual check results with status, latency, and error information
 - **Utilities**:
   - `httpChecker` - HTTP/HTTPS health check with TLS validation
   - `tcpChecker` - TCP port connectivity checker
@@ -739,6 +1082,48 @@ The monitor module provides comprehensive uptime monitoring capabilities:
   - Monitors are processed via BullMQ queue system
   - Jobs are enqueued based on monitor schedule
   - Worker processes handle actual health checks
+  - Integrated with alert policy evaluation for automatic incident management
+
+### Incident Module
+
+The incident module provides automatic incident tracking and lifecycle management:
+
+- **Automatic Incident Management**:
+  - Incidents are automatically opened when monitors fail (based on alert policy rules)
+  - Incidents are automatically resolved when monitors recover
+  - Only one active incident per monitor at a time
+- **Incident Lifecycle**:
+  - `open` - Incident is active and unacknowledged
+  - `acknowledged` - User has acknowledged the incident (stops escalations)
+  - `resolved` - Incident has been resolved (automatically or manually)
+- **Features**:
+  - User tracking for acknowledge/resolve actions
+  - Timestamp tracking (openedAt, acknowledgedAt, resolvedAt)
+  - Error reason storage
+  - Project-scoped incidents
+- **Data Models**:
+  - `Incident` - Incident records with status and timestamps
+
+### Alert Policy Module
+
+The alert policy module defines rules for incident management and notification channels:
+
+- **Policy Evaluation**:
+  - Evaluates consecutive check results to determine when to open/resolve incidents
+  - Configurable fail threshold (number of consecutive DOWN checks)
+  - Configurable recover threshold (number of consecutive UP checks)
+  - Escalation timing configuration
+- **Notification Channels**:
+  - Email notifications (required, at least one email)
+  - Telegram bot integration (optional)
+  - WhatsApp API integration (optional)
+  - Webhook URLs (optional, multiple supported)
+- **Features**:
+  - Project-scoped policies
+  - Unique policy names per project
+  - Policy selection for monitors based on projectId
+- **Data Models**:
+  - `AlertPolicy` - Policy configuration with rules and channels
 
 ### Project Module
 
@@ -761,6 +1146,8 @@ The monitor module provides comprehensive uptime monitoring capabilities:
 - TypeScript strict mode enabled
 - ESLint for code linting
 - ES Modules (ESM) for imports/exports
+- Global error handler with standardized error response format
+- Consistent use of Fastify logger instead of console.log
 
 ## 📝 License
 
