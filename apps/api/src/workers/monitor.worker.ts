@@ -4,10 +4,12 @@ import { env } from "../config/env.js";
 import { monitorQueue } from "../queues/monitor.queue.js";
 import { MonitorModel, type IMonitor } from "../modules/monitor/monitor.model.js";
 import { CheckModel } from "../modules/monitor/check.model.js";
+import { IncidentModel } from "../modules/monitor/incident.model.js";
 import { checkHttp } from "../modules/monitor/httpChecker.js";
 import { checkTcp, parseTcpTarget } from "../modules/monitor/tcpChecker.js";
 import { IncidentService } from "../modules/monitor/incident.service.js";
 import { AlertPolicyService } from "../modules/alertPolicy/alertPolicy.service.js";
+import { AlertService } from "../modules/alerts/alert.service.js";
 
 console.log("🚀 UptimeFlux Monitor Worker Running...");
 
@@ -78,6 +80,7 @@ new Worker(
     // Alert policy evaluation
     const alertPolicyService = new AlertPolicyService();
     const incidentService = new IncidentService();
+    const alertService = new AlertService();
     const lastChecks = await CheckModel.find({ monitorId: monitor._id })
       .sort({ ts: -1 })
       .limit(10)
@@ -87,10 +90,32 @@ new Worker(
     const policyResult = await alertPolicyService.evaluatePolicy(monitor, lastChecks);
 
     // Handle incident based on policy evaluation
+    let incidentEvent: { type: "opened" | "resolved"; incidentId: string } | null = null;
+    
     if (policyResult.action === "open") {
-      await incidentService.openIncident(monitor, checkDoc);
+      const incidentResponse = await incidentService.openIncident(monitor, checkDoc);
+      incidentEvent = { type: "opened", incidentId: incidentResponse.id };
     } else if (policyResult.action === "resolve") {
-      await incidentService.resolveIncident(monitor);
+      const incidentResponse = await incidentService.resolveIncident(monitor);
+      if (incidentResponse) {
+        incidentEvent = { type: "resolved", incidentId: incidentResponse.id };
+      }
+    }
+
+    // Enqueue alert if incident event occurred
+    if (incidentEvent) {
+      const policy = await alertPolicyService.getPolicyForMonitor(monitor);
+      if (policy) {
+        const incidentDoc = await IncidentModel.findById(incidentEvent.incidentId);
+        if (incidentDoc) {
+          await alertService.enqueueAlert(
+            incidentDoc,
+            monitor,
+            policy,
+            incidentEvent.type
+          );
+        }
+      }
     }
 
     // Schedule next run
