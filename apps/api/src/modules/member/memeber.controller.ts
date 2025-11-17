@@ -82,4 +82,18 @@ export class MemberController {
       this.handleError(error, request, reply);
     }
   };
+
+  /**
+   * Delete member
+   */
+  deleteMember = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as { userId: string }).userId;
+      const params = deleteMemberSchema.parse(request.params);
+      await this.memberService.deleteMember(userId, params.projectId, params.memberId);
+      return reply.code(204).send();
+    } catch (error) {
+      this.handleError(error, request, reply);
+    }
+  };
 }

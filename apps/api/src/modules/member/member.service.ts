@@ -69,7 +69,9 @@ export class MemberService {
     }
 
     // Verify target user exists
-    const targetUser = await UserModel.findById(data.userId).select("email firstName lastName").lean();
+    const targetUser = await UserModel.findById(data.userId)
+      .select("email firstName lastName")
+      .lean();
     if (!targetUser) {
       throw new MemberError(404, "User not found");
     }
@@ -90,7 +92,10 @@ export class MemberService {
       }).lean();
 
       if (!member) {
-        throw new MemberError(403, "You don't have permission to add members to this project");
+        throw new MemberError(
+          403,
+          "You don't have permission to add members to this project"
+        );
       }
 
       userRole = member.role as Role;
@@ -122,9 +127,13 @@ export class MemberService {
       role: data.role,
     });
 
-    return this.toResponse(member, targetUser.email, `${targetUser.firstName} ${targetUser.lastName}`);
+    return this.toResponse(
+      member,
+      targetUser.email,
+      `${targetUser.firstName} ${targetUser.lastName}`
+    );
   }
-  
+
   /**
    * Get members by project
    */
@@ -186,7 +195,10 @@ export class MemberService {
       .lean();
 
     const userMap = new Map(
-      users.map((u) => [String(u._id), { email: u.email, name: `${u.firstName} ${u.lastName}` }])
+      users.map((u) => [
+        String(u._id),
+        { email: u.email, name: `${u.firstName} ${u.lastName}` },
+      ])
     );
 
     return {
@@ -203,7 +215,11 @@ export class MemberService {
     };
   }
 
-  private toResponse(member: MemberEntity, userEmail?: string, userName?: string): MemberResponse {
+  private toResponse(
+    member: MemberEntity,
+    userEmail?: string,
+    userName?: string
+  ): MemberResponse {
     const toIdString = (value: unknown): string => {
       if (typeof value === "string") {
         return value;
@@ -229,10 +245,10 @@ export class MemberService {
     };
   }
 
-   /**
+  /**
    * Update member role
    */
-   async updateMember(
+  async updateMember(
     userId: string,
     projectId: string,
     memberId: string,
@@ -278,14 +294,20 @@ export class MemberService {
       }).lean();
 
       if (!userMember) {
-        throw new MemberError(403, "You don't have permission to update members");
+        throw new MemberError(
+          403,
+          "You don't have permission to update members"
+        );
       }
 
       userRole = userMember.role as Role;
 
       // Only owners can manage members
       if (userRole !== Role.OWNER) {
-        throw new MemberError(403, "Only project owners can update member roles");
+        throw new MemberError(
+          403,
+          "Only project owners can update member roles"
+        );
       }
     } else {
       userRole = Role.OWNER;
@@ -305,7 +327,10 @@ export class MemberService {
       });
 
       if (ownerCount <= 1) {
-        throw new MemberError(400, "Cannot remove the last owner from the project");
+        throw new MemberError(
+          400,
+          "Cannot remove the last owner from the project"
+        );
       }
     }
 
@@ -332,5 +357,91 @@ export class MemberService {
     );
   }
 
-}
+  /**
+   * Delete member
+   */
+  async deleteMember(
+    userId: string,
+    projectId: string,
+    memberId: string
+  ): Promise<void> {
+    if (
+      !Types.ObjectId.isValid(userId) ||
+      !Types.ObjectId.isValid(projectId) ||
+      !Types.ObjectId.isValid(memberId)
+    ) {
+      throw new MemberError(400, "Invalid ID format");
+    }
 
+    // Verify project exists
+    const project = await ProjectModel.findById(projectId).lean();
+    if (!project) {
+      throw new MemberError(404, "Project not found");
+    }
+
+    // Find member to delete
+    const memberToDelete = await MemberModel.findById(memberId).lean();
+    if (!memberToDelete) {
+      throw new MemberError(404, "Member not found");
+    }
+
+    if (String(memberToDelete.projectId) !== projectId) {
+      throw new MemberError(400, "Member does not belong to this project");
+    }
+
+    // Check if user can manage members
+    const org = await OrgModel.findById(project.orgId).lean();
+    if (!org) {
+      throw new MemberError(404, "Organization not found");
+    }
+
+    const isOrgOwner = String(org.ownerId) === userId;
+    let userRole: Role | null = null;
+
+    if (!isOrgOwner) {
+      const userMember = await MemberModel.findOne({
+        projectId: new Types.ObjectId(projectId),
+        userId: new Types.ObjectId(userId),
+      }).lean();
+
+      if (!userMember) {
+        throw new MemberError(
+          403,
+          "You don't have permission to remove members"
+        );
+      }
+
+      userRole = userMember.role as Role;
+
+      // Only owners can remove members
+      if (userRole !== Role.OWNER) {
+        throw new MemberError(403, "Only project owners can remove members");
+      }
+    } else {
+      userRole = Role.OWNER;
+    }
+
+    // Prevent removing the last owner
+    if (memberToDelete.role === Role.OWNER) {
+      const ownerCount = await MemberModel.countDocuments({
+        projectId: new Types.ObjectId(projectId),
+        role: Role.OWNER,
+      });
+
+      if (ownerCount <= 1) {
+        throw new MemberError(
+          400,
+          "Cannot remove the last owner from the project"
+        );
+      }
+    }
+
+    // Prevent users from removing themselves
+    if (String(memberToDelete.userId) === userId) {
+      throw new MemberError(400, "You cannot remove yourself from the project");
+    }
+
+    await MemberModel.deleteOne({ _id: new Types.ObjectId(memberId) });
+  }
+
+}
