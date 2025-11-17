@@ -740,6 +740,22 @@ The monitor module provides comprehensive uptime monitoring capabilities:
   - Jobs are enqueued based on monitor schedule
   - Worker processes handle actual health checks
 
+### Project Module
+
+- **Org-Scoped Projects**: Projects belong to organizations; creation endpoint `/orgs/:orgId/projects` verifies requester is org owner or existing member.
+- **Slug Management**: `project.service.ts` generates unique, sanitized slugs per organization and enforces uniqueness on updates.
+- **Access Control**: RBAC pre-handlers (`requireProjectMember`) ensure only viewers can read, maintainers can update, and owners can delete.
+- **Pagination & Filtering**: `getProjectsByOrg` returns paginated lists with total counts and enforces that non-owners belong to at least one project in the org.
+- **Owner Membership Sync**: When an org owner creates a project they are automatically added as a project owner member record to keep RBAC in sync.
+
+### Member Module
+
+- **Role Management**: Supports roles `owner`, `maintainer`, `viewer` with hierarchy defined in `modules/rbac/permissions.ts`.
+- **Validation Guardrails**: Prevents duplicate memberships, demoting the last owner, or removing oneself; enforces role assignment rules via `validateRoleAssignment`.
+- **Project Access Checks**: All member operations confirm requester is either org owner or a project owner.
+- **User Context Enrichment**: Listing members (`getMembersByProject`) joins user email/name data for UI rendering and includes pagination metadata.
+- **API Surface**: Endpoints allow owners to invite users, update roles, and remove members under `/projects/:projectId/members` routes guarded by JWT + RBAC middleware.
+
 ### Code Style
 
 - TypeScript strict mode enabled
