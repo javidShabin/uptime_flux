@@ -334,6 +334,8 @@ curl -X POST http://localhost:3000/verify-otp \
 
 ### Test Job
 
+> ⚠️ **Development Only**: This endpoint is only available when `NODE_ENV=development`.
+
 Enqueue a test monitoring job to the worker queue.
 
 **Endpoint:** `POST /test-job`
@@ -358,6 +360,8 @@ This endpoint adds a test job to the `monitor-run` queue with the following data
 - `timeout`: 5000
 
 The worker will process this job and perform an HTTP GET request to the specified URL.
+
+**Note**: This endpoint is automatically disabled in production for security reasons.
 
 ### Monitors
 
@@ -994,8 +998,10 @@ apps/api/
 │   │       └── alertPolicy.errors.ts   # Custom error classes
 │   ├── plugins/             # Fastify plugins
 │   │   ├── db.ts            # MongoDB connection plugin
+│   │   ├── redis.ts         # Redis connection plugin
 │   │   ├── jwt.ts           # JWT authentication plugin
-│   │   └── redis.ts         # Redis connection plugin
+│   │   ├── cookie.ts        # Cookie plugin for secure cookie handling
+│   │   └── cloudinary.ts    # Cloudinary plugin for image management
 │   ├── queues/              # BullMQ queue definitions
 │   │   ├── index.ts         # Queue exports
 │   │   └── monitor.queue.ts # Monitor queue configuration
@@ -1026,6 +1032,12 @@ The API uses a plugin-based architecture:
 - **MongoDB Plugin** (`plugins/db.ts`) - Handles MongoDB connection and lifecycle
 - **Redis Plugin** (`plugins/redis.ts`) - Manages Redis connection, exposes `app.redis`
 - **JWT Plugin** (`plugins/jwt.ts`) - JWT authentication with access and refresh tokens
+- **Cookie Plugin** (`plugins/cookie.ts`) - Secure cookie handling for refresh tokens
+- **Cloudinary Plugin** (`plugins/cloudinary.ts`) - Image upload and management
+- **Security Plugins**:
+  - **Helmet** - Security headers protection
+  - **CORS** - Cross-origin resource sharing configuration
+  - **Rate Limit** - Request rate limiting (100 requests per minute)
 
 ### Authentication Module
 
@@ -1134,6 +1146,8 @@ The alert policy module defines rules for incident management and notification c
 - TypeScript strict mode enabled
 - ESLint for code linting
 - ES Modules (ESM) for imports/exports
+- Global error handler with standardized error response format
+- Consistent use of Fastify logger instead of console.log
 
 ## 📝 License
 

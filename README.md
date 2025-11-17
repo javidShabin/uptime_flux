@@ -33,11 +33,13 @@ UptimeFlux is a comprehensive uptime monitoring solution built as a monorepo, co
 ### Key Features
 
 - 🔐 **Secure Authentication** - OTP-based email verification
+- 🛡️ **Security** - Helmet headers, CORS protection, and rate limiting
 - 📊 **Uptime Monitoring** - Multi-protocol monitoring (HTTP/HTTPS/TCP)
 - 🔔 **TLS Monitoring** - Automatic SSL/TLS certificate expiration tracking
 - 🏷️ **Organization** - Tag-based monitor organization
 - ⏸️ **Control** - Pause/resume monitors on demand
 - 📈 **Scalable** - Queue-based architecture for high throughput
+- 🎯 **Error Handling** - Global error handler with standardized responses
 
 ## 🏗 Architecture
 
@@ -309,6 +311,8 @@ For detailed monitor documentation, see [API README](apps/api/README.md#monitors
 
 ### Test Job
 
+> ⚠️ **Development Only**: This endpoint is only available when `NODE_ENV=development`.
+
 Enqueue a test monitoring job to the worker queue.
 
 **Endpoint:** `POST /test-job`
@@ -320,6 +324,8 @@ curl -X POST http://localhost:3000/test-job
 ```
 
 This endpoint adds a test job to the `monitor-run` queue. The worker will process it and perform an HTTP health check.
+
+**Note**: This endpoint is automatically disabled in production for security reasons.
 
 For more details, see [API README](apps/api/README.md).
 
