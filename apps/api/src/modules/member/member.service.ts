@@ -33,26 +33,18 @@ export interface MembersListResponse {
   };
 }
 
+type MemberEntity = {
+  _id: unknown;
+  orgId: Types.ObjectId | string;
+  projectId: Types.ObjectId | string;
+  userId: Types.ObjectId | string;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export class MemberService {
   constructor() {}
-
-  private toResponse(
-    member: IMember,
-    userEmail?: string | null,
-    userName?: string | null
-  ): MemberResponse {
-    return {
-      id: member.id,
-      orgId: member.orgId.toString(),
-      projectId: member.projectId.toString(),
-      userId: member.userId.toString(),
-      userEmail: userEmail ?? undefined,
-      userName: userName ?? undefined,
-      role: member.role,
-      createdAt: member.createdAt,
-      updatedAt: member.updatedAt,
-    };
-  }
 
   /**
    * Create a new member
@@ -131,6 +123,110 @@ export class MemberService {
     });
 
     return this.toResponse(member, targetUser.email, `${targetUser.firstName} ${targetUser.lastName}`);
+  }
+  
+  /**
+   * Get members by project
+   */
+  async getMembersByProject(
+    userId: string,
+    projectId: string,
+    query: GetMembersQueryInput
+  ): Promise<MembersListResponse> {
+    if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(projectId)) {
+      throw new MemberError(400, "Invalid ID format");
+    }
+
+    // Verify project exists
+    const project = await ProjectModel.findById(projectId).lean();
+    if (!project) {
+      throw new MemberError(404, "Project not found");
+    }
+
+    // Check if user has access to project
+    const org = await OrgModel.findById(project.orgId).lean();
+    if (!org) {
+      throw new MemberError(404, "Organization not found");
+    }
+
+    const isOrgOwner = String(org.ownerId) === userId;
+    const isMember = await MemberModel.findOne({
+      projectId: new Types.ObjectId(projectId),
+      userId: new Types.ObjectId(userId),
+    }).lean();
+
+    if (!isOrgOwner && !isMember) {
+      throw new MemberError(403, "You don't have access to this project");
+    }
+
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const total = await MemberModel.countDocuments({
+      projectId: new Types.ObjectId(projectId),
+    });
+
+    // Get members with user info
+    const members = await MemberModel.find({
+      projectId: new Types.ObjectId(projectId),
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Get user details
+    const userIds = members.map((m) => m.userId);
+    const users = await UserModel.find({
+      _id: { $in: userIds },
+    })
+      .select("email firstName lastName")
+      .lean();
+
+    const userMap = new Map(
+      users.map((u) => [String(u._id), { email: u.email, name: `${u.firstName} ${u.lastName}` }])
+    );
+
+    return {
+      members: members.map((member) => {
+        const userInfo = userMap.get(String(member.userId));
+        return this.toResponse(member, userInfo?.email, userInfo?.name);
+      }),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  private toResponse(member: MemberEntity, userEmail?: string, userName?: string): MemberResponse {
+    const toIdString = (value: unknown): string => {
+      if (typeof value === "string") {
+        return value;
+      }
+
+      if (value instanceof Types.ObjectId) {
+        return value.toString();
+      }
+
+      return String(value);
+    };
+
+    return {
+      id: toIdString(member._id),
+      orgId: toIdString(member.orgId),
+      projectId: toIdString(member.projectId),
+      userId: toIdString(member.userId),
+      userEmail,
+      userName,
+      role: member.role,
+      createdAt: member.createdAt,
+      updatedAt: member.updatedAt,
+    };
   }
 }
 

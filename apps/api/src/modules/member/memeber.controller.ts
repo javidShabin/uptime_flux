@@ -47,4 +47,19 @@ export class MemberController {
       this.handleError(error, request, reply);
     }
   };
+  
+   /**
+   * Get members by project
+   */
+   getMembers = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as { userId: string }).userId;
+      const params = getMembersByProjectSchema.parse(request.params);
+      const query = getMembersQuerySchema.parse(request.query);
+      const result = await this.memberService.getMembersByProject(userId, params.projectId, query);
+      return reply.code(200).send(result);
+    } catch (error) {
+      this.handleError(error, request, reply);
+    }
+  };
 }

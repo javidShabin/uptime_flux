@@ -17,5 +17,13 @@ export default async function memberRoutes(app: FastifyInstance) {
       controller.createMember
     );
   
+    // Get members by project
+    app.get(
+        "/projects/:projectId/members",
+        {
+            preHandler: [app.authenticate, requireProjectMember(Role.VIEWER)]
+        },
+        controller.getMembers
+    )
 }
 
