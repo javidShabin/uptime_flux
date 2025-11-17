@@ -34,4 +34,13 @@ export default async function memberRoutes(app: FastifyInstance) {
     },
     controller.updateMember
   );
+
+  // Delete member (remove from project)
+  app.delete(
+    "/projects/:projectId/members/:memberId",
+    {
+      preHandler: [app.authenticate, requireProjectMember(Role.OWNER)],
+    },
+    controller.deleteMember
+  );
 }
