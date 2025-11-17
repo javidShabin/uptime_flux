@@ -220,7 +220,6 @@ export class ProjectService {
     }
 
     return this.toResponse(project as ProjectEntity);
-    return this.toResponse(project as ProjectEntity);
   }
 
   /**

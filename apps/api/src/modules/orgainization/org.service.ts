@@ -62,7 +62,7 @@ export class OrgService {
    */
   async createOrg(userId: string, data: CreateOrgInput): Promise<OrgResponse> {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new OrgError(400, "Invalid user ID formate");
+      throw new OrgError(400, "Invalid user ID format");
     }
 
     // Generate slug if not provided

@@ -26,20 +26,17 @@ import {
     private handleError(error: unknown, request: FastifyRequest, reply: FastifyReply) {
         if (error instanceof ZodError) {
             reply.code(400).send({
-                message: "Validation error",
-                errors: error.issues,
+                error: "Validation error",
+                details: error.issues,
             });
         } else if (error instanceof AuthError) {
             reply.code(error.statusCode).send({
-                message: error.message,
+                error: error.message,
             });
         } else {
-            // Log the full error for debugging
-            console.error("❌ Unhandled error:", error);
-            request.log.error(error);
+            request.log.error(error, "Unhandled error");
             reply.code(500).send({
-                message: "Internal server error",
-                error: process.env.NODE_ENV === "development" ? String(error) : undefined,
+                error: "Internal server error",
             });
         }
     }

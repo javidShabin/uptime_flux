@@ -26,6 +26,7 @@
 
 - ⚡ **Fast**: Built on Fastify for high performance
 - 🔒 **Secure**: OTP-based email verification for user registration
+- 🛡️ **Security**: Helmet security headers, CORS protection, and rate limiting
 - 📧 **Email Verification**: Secure account creation with OTP codes
 - 🔐 **JWT Authentication**: Token-based authentication with refresh tokens
 - 📊 **Uptime Monitoring**: Comprehensive monitoring system with HTTP/HTTPS and TCP checks
@@ -39,6 +40,7 @@
 - ⏸️ **Pause/Resume**: Control monitor execution with pause functionality
 - 🚨 **Incident Management**: Automatic incident tracking with open/acknowledged/resolved states
 - 📋 **Alert Policies**: Configurable alert rules with multi-channel notifications (email, Telegram, WhatsApp, webhooks)
+- 🎯 **Error Handling**: Global error handler with standardized error responses
 
 ## 🛠 Tech Stack
 

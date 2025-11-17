@@ -30,8 +30,9 @@ export async function createSocketServer(app: FastifyInstance): Promise<any> {
   // Create Socket.IO server
   io = new Server(app.server, {
     cors: {
-      origin: "*",
+      origin: env.NODE_ENV === "production" ? false : true, // Configure allowed origins in production
       methods: ["GET", "POST"],
+      credentials: true,
     },
     transports: ["websocket", "polling"],
   });

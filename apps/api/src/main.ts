@@ -2,11 +2,14 @@ import Fastify from "fastify";
 import { env } from "./config/env.js";
 import mongoPlugin from "./plugins/db.js";
 import redisPlugin from "./plugins/redis.js";
-import { monitorQueue } from "./queues/index.js";
 import jwtPlugin from "./plugins/jwt.js";
 import cookiePlugin from "./plugins/cookie.js";
 import cloudinaryPlugin from "./plugins/cloudinary.js";
 import multipart from "@fastify/multipart";
+import helmet from "@fastify/helmet";
+import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
+import { ZodError } from "zod";
 import authenticationRoutes from "./routes/authentication.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import monitorRoutes from "./routes/monitor.routes.js";
@@ -27,12 +30,47 @@ export async function createServer() {
   await app.register(redisPlugin);
   await app.register(cookiePlugin);
   await app.register(jwtPlugin);
+  
+  // Security middleware
+  await app.register(helmet);
+  await app.register(cors, {
+    origin: env.NODE_ENV === "production" ? false : true, // Configure allowed origins in production
+    credentials: true,
+  });
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+  });
+  
   await app.register(multipart, {
     limits: {
       fileSize: 5 * 1024 * 1024, // 5MB
     },
   });
   await app.register(cloudinaryPlugin);
+  
+  // Global error handler
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof ZodError) {
+      return reply.code(400).send({
+        error: "Validation error",
+        details: error.issues,
+      });
+    }
+    
+    request.log.error(error, "Unhandled error");
+    
+    const statusCode = error && typeof error === "object" && "statusCode" in error 
+      ? (error.statusCode as number) 
+      : 500;
+    const message = error && typeof error === "object" && "message" in error
+      ? (error.message as string)
+      : "Internal server error";
+    
+    return reply.code(statusCode).send({
+      error: message,
+    });
+  });
 
   // --- THEN Register Routes ---
   app.get("/health", async () => {
@@ -45,15 +83,19 @@ export async function createServer() {
     };
   });
 
-  app.post("/test-job", async () => {
-    await monitorQueue.add("test", {
-      monitorId: "123",
-      url: "https://google.com",
-      timeout: 5000,
-    });
+  // Test endpoint - only available in development
+  if (env.NODE_ENV === "development") {
+    const { monitorQueue } = await import("./queues/index.js");
+    app.post("/test-job", async () => {
+      await monitorQueue.add("test", {
+        monitorId: "123",
+        url: "https://google.com",
+        timeout: 5000,
+      });
 
-    return { ok: true };
-  });
+      return { ok: true };
+    });
+  }
 
   // Register authentication routes
   await app.register(authenticationRoutes);
