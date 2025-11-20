@@ -7,6 +7,7 @@ import { CheckModel } from "../modules/monitor/check.model.js";
 import { IncidentModel } from "../modules/monitor/incident.model.js";
 import { checkHttp } from "../modules/monitor/httpChecker.js";
 import { checkTcp, parseTcpTarget } from "../modules/monitor/tcpChecker.js";
+import { checkPing, parsePingTarget } from "../modules/monitor/pingChecker.js";
 import { IncidentService } from "../modules/monitor/incident.service.js";
 import { AlertPolicyService } from "../modules/alertPolicy/alertPolicy.service.js";
 import { AlertService } from "../modules/alerts/alert.service.js";
@@ -68,6 +69,21 @@ new Worker(
           host: tcpTarget.host,
           port: tcpTarget.port,
           timeoutMs: monitor.timeoutMs,
+        });
+      }
+    } else if (monitor.type === "ping") {
+      const pingTarget = parsePingTarget(monitor.target);
+      if (!pingTarget) {
+        result = {
+          status: "down" as const,
+          latency: 0,
+          error: "Invalid ping target format. Expected hostname or IP address",
+        };
+      } else {
+        result = await checkPing({
+          host: pingTarget,
+          timeoutMs: monitor.timeoutMs,
+          count: 1, // Single ping for faster checks
         });
       }
     }
