@@ -1,6 +1,4 @@
-// @ts-expect-error - socket.io types may not be available
 import { Server } from "socket.io";
-// @ts-expect-error - @socket.io/redis-adapter types may not be available
 import { createAdapter } from "@socket.io/redis-adapter";
 import Redis from "ioredis";
 import { env } from "../../config/env.js";

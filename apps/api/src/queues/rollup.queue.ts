@@ -10,7 +10,7 @@ export type RollupJob = {
  * Rollup queue for daily aggregation jobs
  * This queue is used to enqueue rollup jobs that will be processed by workers
  */
-export const rollupQueue = new Queue("rollup:daily", {
+export const rollupQueue = new Queue("rollup-daily", {
   connection: { url: env.REDIS_URL },
   defaultJobOptions: {
     removeOnComplete: 100,

@@ -13,7 +13,7 @@ export type AlertJob = {
  * Alert queue for fan-out notifications
  * This queue is used to enqueue alert jobs that will be processed by alert workers
  */
-export const alertQueue = new Queue("alert:fanout", {
+export const alertQueue = new Queue("alert-fanout", {
   connection: { url: env.REDIS_URL },
   defaultJobOptions: {
     removeOnComplete: 100,
