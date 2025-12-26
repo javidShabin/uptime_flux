@@ -61,5 +61,6 @@ const monitorSchema = new Schema<MonitorDocument>(
  */
 monitorSchema.index({ isActive: 1 });
 monitorSchema.index({ lastStatus: 1 });
+monitorSchema.index({ url: 1 }, { unique: true });
 
 export const Monitor = model<MonitorDocument>("Monitor", monitorSchema);

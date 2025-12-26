@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { AppError } from "../utils/app-error";
 
 export function errorHandler(
   err: unknown,
@@ -7,6 +8,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ) {
+  // Zod validation errors
   if (err instanceof ZodError) {
     return res.status(400).json({
       error: "Validation error",
@@ -17,9 +19,17 @@ export function errorHandler(
     });
   }
 
+  // Business / domain errors
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+    });
+  }
+
+  // Unknown / programming errors
   console.error("❌ API Error:", err);
 
-  res.status(500).json({
+  return res.status(500).json({
     error: "Internal Server Error",
   });
 }
