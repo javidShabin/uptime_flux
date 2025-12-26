@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import type {ZodSchema} from "zod"
+import type { ZodSchema } from "zod";
 
 export const validate =
   <T>(schema: ZodSchema<T>) =>
@@ -11,9 +11,7 @@ export const validate =
         params: req.params,
       });
 
-      // attach validated data
-      (req as any).validated = parsed;
-
+      req.validated = parsed;
       next();
     } catch (err) {
       next(err);

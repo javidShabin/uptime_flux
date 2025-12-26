@@ -3,7 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import { healthRouter } from "./routes/health.route";
+
+import { healthRouter } from "./modules/health/health.route";
 import { notFound } from "./middlewares/notFound.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
 

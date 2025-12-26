@@ -2,7 +2,9 @@
   "extends": "../../packages/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "noEmit": true,
+     "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src"]
 }
