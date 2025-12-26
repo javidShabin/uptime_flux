@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { MonitorService } from "./monitor.service";
+import type { CreateMonitorBody } from "./monitor.validation";
 
 /**
  * MonitorController
@@ -16,10 +17,11 @@ export class MonitorController {
   // Create monitor
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const monitor = await this.monitorService.createMonitor(req.body)
-        res.status(201).json(monitor)
-    } catch (error:any) {
-        next(error)
+      const { body } = req.validated as { body: CreateMonitorBody };
+      const monitor = await this.monitorService.createMonitor(body);
+      res.status(201).json(monitor);
+    } catch (error: unknown) {
+      next(error);
     }
   };
 }

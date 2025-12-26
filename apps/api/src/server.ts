@@ -5,6 +5,7 @@ import morgan from "morgan";
 
 
 import { healthRouter } from "./modules/health/health.route";
+import { v1Router } from "./routes/router";
 import { notFound } from "./middlewares/notFound.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
 
@@ -19,6 +20,7 @@ export function createServer() {
 
   // Routes
   app.use("/health", healthRouter);
+  app.use("/api/v1", v1Router);
 
   // Errors
   app.use(notFound);
