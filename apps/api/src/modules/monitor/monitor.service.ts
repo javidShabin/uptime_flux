@@ -1,6 +1,7 @@
 import { Monitor } from "./monitor.model";
 import { AppError } from "../../utils/app-error";
 
+
 /**
  * MonitorService
  *
@@ -47,6 +48,30 @@ export class MonitorService {
     }
 
     // Return the monitors
-    return allMonitors
+    return allMonitors;
+  }
+
+  // =================================
+  // Update monitor
+  // =================================
+  async updateMonitor(
+    monitorId: string,
+    data: Partial<{
+      url: string;
+      interval: number;
+      isActive: boolean;
+    }>
+  ) {
+    const monitor = await Monitor.findByIdAndUpdate(monitorId, data, {
+      new: true,
+    });
+
+    // Check any monitor is available with the monitorId
+    if (!monitor) {
+      throw new AppError("Monitor not found", 404);
+    }
+
+    // Return monitor
+    return monitor;
   }
 }
