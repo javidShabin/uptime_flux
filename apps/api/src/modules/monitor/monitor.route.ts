@@ -20,4 +20,12 @@ router.post(
   monitorController.create
 );
 
+/**
+ * GET /monitors
+ * Get all monitors
+ */
+router.get("/get",
+  monitorController.findAll
+)
+
 export const monitorRouter = router;

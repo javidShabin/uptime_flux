@@ -24,4 +24,14 @@ export class MonitorController {
       next(error);
     }
   };
+
+  // Get all monitors
+  findAll = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const monitors = await this.monitorService.getAllMonitors();
+      res.json(monitors);
+    } catch (error: any) {
+      next(error);
+    }
+  };
 }

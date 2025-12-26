@@ -35,4 +35,18 @@ export class MonitorService {
     });
   }
 
+  // =================================
+  // Get all monitors
+  // =================================
+  async getAllMonitors() {
+    // Get all monitors by last add first method
+    const allMonitors = await Monitor.find().sort({ createdAt: -1 });
+
+    if (!allMonitors || allMonitors.length == 0) {
+      throw new AppError("Monitors not exists", 404);
+    }
+
+    // Return the monitors
+    return allMonitors
+  }
 }
