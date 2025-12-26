@@ -32,4 +32,10 @@ router.patch(
   monitorController.update
 );
 
+/**
+ * DELETE /monitors
+ * Delete monitor
+ */
+router.delete("/remove/:id", monitorController.delete);
+
 export const monitorRouter = router;

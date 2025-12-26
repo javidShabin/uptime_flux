@@ -1,7 +1,6 @@
 import { Monitor } from "./monitor.model";
 import { AppError } from "../../utils/app-error";
 
-
 /**
  * MonitorService
  *
@@ -72,6 +71,19 @@ export class MonitorService {
     }
 
     // Return monitor
+    return monitor;
+  }
+
+  // =================================
+  // Delete monitor
+  // =================================
+  async deleteMonitor(monitorId: string) {
+    const monitor = await Monitor.findByIdAndDelete(monitorId);
+
+    if (!monitor) {
+      throw new AppError("Monitor not found", 404);
+    }
+
     return monitor;
   }
 }

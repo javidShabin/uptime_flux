@@ -58,4 +58,22 @@ export class MonitorController {
       next(error);
     }
   };
+
+  /**
+   * Update monitor
+   */
+  delete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({ message: "Monitor id is required" });
+      }
+
+      await this.monitorService.deleteMonitor(id);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
 }
