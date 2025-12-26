@@ -1,7 +1,6 @@
 import { Monitor } from "./monitor.model";
 import { AppError } from "../../utils/app-error";
 
-
 /**
  * MonitorService
  *
