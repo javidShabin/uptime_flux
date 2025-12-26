@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 
 export function errorHandler(
   err: unknown,
@@ -6,6 +7,16 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ) {
+  if (err instanceof ZodError) {
+    return res.status(400).json({
+      error: "Validation error",
+      issues: err.issues.map((i) => ({
+        path: i.path.join("."),
+        message: i.message,
+      })),
+    });
+  }
+
   console.error("❌ API Error:", err);
 
   res.status(500).json({
