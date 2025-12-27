@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@uptimeflux/shared": "workspace:^",
     "bullmq": "^5.66.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

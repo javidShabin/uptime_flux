@@ -1,4 +1,4 @@
-import { Monitor } from "./monitor.model";
+import { Monitor } from "@uptimeflux/shared";
 import { AppError } from "../../utils/app-error";
 import { scheduleMonitorJob } from "../../queues/monitor.queue";
 

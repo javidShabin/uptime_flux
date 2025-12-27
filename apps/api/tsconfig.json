@@ -4,6 +4,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": true,
+    "moduleResolution": "Node",
      "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src"]
