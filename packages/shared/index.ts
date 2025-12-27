@@ -1,5 +1,7 @@
-// packages/shared/src/index.ts
+
 export * from "./monitor";
+export * from "./incident";
+
 export interface MonitorJobPayload {
   monitorId: string;
 }

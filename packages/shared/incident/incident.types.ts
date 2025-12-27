@@ -1,3 +1,4 @@
+
 /**
  * Incident domain types
  *
@@ -13,7 +14,7 @@ export type IncidentStatus = "OPEN" | "RESOLVED";
 /**
  * Incident shape (API-level representation)
  */
-export interface Incident {
+export interface IncidentDTO {
   id: string;
   monitorId: string;
   status: IncidentStatus;
