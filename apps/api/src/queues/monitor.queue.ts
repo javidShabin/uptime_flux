@@ -12,15 +12,18 @@ export interface MonitorJobPayload {
   monitorId: string;
 }
 
+/**
+ * Redis-backed BullMQ queue
+ */
 const monitorQueue = new Queue<MonitorJobPayload>("monitor-checks", {
   connection: {
     url: env.REDIS_URL,
   },
 });
 
-/**
- * Schedule monitor check job
- */
+// =================================
+// Schedule monitor check job
+// =================================
 export async function scheduleMonitorJob(
   monitorId: string,
   intervalSeconds: number
@@ -38,10 +41,10 @@ export async function scheduleMonitorJob(
     }
   );
 }
-/**
- * Remove scheduled monitor job
- */
 
+// =================================
+// Remove scheduled monitor job
+// =================================
 export async function removeMonitorJob(monitoId: string) {
   const repeatablejobs = await monitorQueue.getRepeatableJobs();
 

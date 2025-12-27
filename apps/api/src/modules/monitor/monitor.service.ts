@@ -1,5 +1,6 @@
 import { Monitor } from "./monitor.model";
 import { AppError } from "../../utils/app-error";
+import { scheduleMonitorJob } from "../../queues/monitor.queue";
 
 /**
  * MonitorService
@@ -29,11 +30,16 @@ export class MonitorService {
     }
 
     // Create and return monitor
-    return Monitor.create({
+    const monitor = await Monitor.create({
       url: data.url,
       interval: data.interval,
     });
+
+    await scheduleMonitorJob(monitor._id.toString(), monitor.interval)
+
+    return monitor
   }
+
 
   // =================================
   // Get all monitors
