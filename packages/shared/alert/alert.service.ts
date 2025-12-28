@@ -1,5 +1,5 @@
 import type { AlertPayload } from "./alert.types";
-
+import { emailTransporter } from "./email";
 /**
  * AlertService
  *
@@ -19,11 +19,27 @@ export class AlertService {
     }
   }
   private async sendDownAlert(payload: AlertPayload) {
-    console.log(`DOWN: ${payload.url} at ${payload.occurredAt.toISOString()}`);
+    await emailTransporter.sendMail({
+      from: process.env.ALERT_FROM,
+      to: process.env.ALERT_TO,
+      subject: `🚨 DOWN: ${payload.url}`,
+      html: `
+        <h2>🚨 Site Down</h2>
+        <p><strong>URL:</strong> ${payload.url}</p>
+        <p><strong>Time:</strong> ${payload.occurredAt.toISOString()}</p>
+      `,
+    });
   }
   private async sendRecoveryAlert(payload: AlertPayload) {
-    console.log(
-      `UP: ${payload.url} recovered at ${payload.occurredAt.toISOString()}`
-    );
+    await emailTransporter.sendMail({
+      from: process.env.ALERT_FROM,
+      to: process.env.ALERT_TO,
+      subject: `✅ UP: ${payload.url}`,
+      html: `
+        <h2>✅ Site Recovered</h2>
+        <p><strong>URL:</strong> ${payload.url}</p>
+        <p><strong>Time:</strong> ${payload.occurredAt.toISOString()}</p>
+      `,
+    });
   }
 }

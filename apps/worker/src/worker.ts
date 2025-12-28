@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Worker } from "bullmq";
 import { redisConnection } from "./config/redis";
 import { connectMongo, disconnectMongo } from "./config/mongo";
