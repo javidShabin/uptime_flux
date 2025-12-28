@@ -3,6 +3,7 @@ import { MonitorController } from "./monitor.controller";
 import { MonitorService } from "./monitor.service";
 import { validate } from "../../validation/validate";
 import { createMonitorSchema, updateMonitorSchema } from "./monitor.validation";
+import { requireAuth } from "../auth/auth.middleware";
 
 const router = Router();
 
@@ -14,7 +15,7 @@ const monitorController = new MonitorController(monitorService);
  * POST /monitors
  * Create a new monitor
  */
-router.post("/create", validate(createMonitorSchema), monitorController.create);
+router.post("/create", requireAuth, validate(createMonitorSchema), monitorController.create);
 
 /**
  * GET /monitors

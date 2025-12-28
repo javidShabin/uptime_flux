@@ -17,4 +17,7 @@ export const env = {
 
   MONGO_URI: requireEnv("MONGO_URI"),
   REDIS_URL: requireEnv("REDIS_URL"),
-};
+
+  JWT_SECRET: requireEnv("JWT_SECRET"),
+  JWT_EXPIRES_IN: requireEnv("JWT_EXPIRES_IN")
+} as const;

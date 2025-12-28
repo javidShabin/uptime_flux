@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { User } from "@uptimeflux/shared";
+import { signJwt } from "../../utils/jwt";
 import type { RegisterInput, LoginInput } from "./auth.types";
 
 /**
@@ -72,10 +73,15 @@ export class AuthService {
       throw new Error("Invalid credentials");
     }
 
+    const token = signJwt({
+      userId: user._id.toString()
+    })
+
     return {
       id: user._id.toString(),
       email: user.email,
       createdAt: user.createdAt,
+      token
     };
   }
 }
