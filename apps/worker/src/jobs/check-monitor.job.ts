@@ -3,9 +3,11 @@ import { Job } from "bullmq";
 import { Monitor } from "@uptimeflux/shared";
 import type { MonitorStatus } from "@uptimeflux/shared";
 import { IncidentService } from "@uptimeflux/shared";
+import { AlertService } from "@uptimeflux/shared";
 
 
 const incidentService = new IncidentService();
+const alertService = new AlertService();
 
 /**
  * Executes uptime check for a monitor
@@ -36,11 +38,26 @@ export async function checkMonitorJob(job: Job<{ monitorId: string }>) {
   // INCIDENT STATE TRANSITIONS
   // ================================
   if (previousStatus === "UP" && currentStatus === "DOWN") {
-    await incidentService.createIncident(monitorId);
+    const incident = await incidentService.createIncident(monitorId);
+
+    await alertService.send({
+      type: "INCIDENT_OPENED",
+      monitorId,
+      url: monitor.url,
+      incidentId: incident._id.toString(),
+      occurredAt: new Date()
+    })
   }
 
   if (previousStatus === "DOWN" && currentStatus === "UP") {
     await incidentService.resolveIncident(monitorId);
+
+    await alertService.send({
+    type: "INCIDENT_RESOLVED",
+    monitorId,
+    url: monitor.url,
+    occurredAt: new Date(),
+  });
   }
 // ================================
   // Persist monitor state

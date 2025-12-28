@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "types": ["node"],
+    "lib": ["ES2021"]
   },
   "include": ["src"]
 }
