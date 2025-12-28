@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Types, Document } from "mongoose";
 
 /**
  * Allowed monitor statuses
@@ -10,6 +10,7 @@ export type MonitorStatus = "UP" | "DOWN" | "UNKNOWN";
  */
 export interface MonitorDocument extends Document {
   url: string;
+  userId: Types.ObjectId
   interval: number; // in seconds
   isActive: boolean;
   lastStatus: MonitorStatus;
@@ -27,6 +28,12 @@ const monitorSchema = new Schema<MonitorDocument>(
       type: String,
       required: true,
       trim: true,
+    },
+
+    userId: {
+      type: Types.ObjectId,
+      required: true,
+      index: true,
     },
 
     interval: {
@@ -62,5 +69,7 @@ const monitorSchema = new Schema<MonitorDocument>(
 monitorSchema.index({ isActive: 1 });
 monitorSchema.index({ lastStatus: 1 });
 monitorSchema.index({ url: 1 }, { unique: true });
+monitorSchema.index({ userId: 1 });
+monitorSchema.index({ userId: 1, url: 1 }, { unique: true });
 
 export const Monitor = model<MonitorDocument>("Monitor", monitorSchema);

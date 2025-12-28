@@ -20,7 +20,10 @@ export class MonitorController {
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { body } = req.validated as { body: CreateMonitorBody };
-      const monitor = await this.monitorService.createMonitor(body);
+      const monitor = await this.monitorService.createMonitor(
+        req.user!.id,
+        body
+      );
       res.status(201).json(monitor);
     } catch (error: unknown) {
       next(error);
@@ -31,9 +34,9 @@ export class MonitorController {
    * Get all monitors
    */
 
-  findAll = async (_req: Request, res: Response, next: NextFunction) => {
+  findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const monitors = await this.monitorService.getAllMonitors();
+      const monitors = await this.monitorService.getAllMonitors(req.user!.id);
       res.json(monitors);
     } catch (error: any) {
       next(error);
@@ -51,7 +54,11 @@ export class MonitorController {
         return res.status(400).json({ message: "Monitor id is required" });
       }
 
-      const monitor = await this.monitorService.updateMonitor(id, req.body);
+      const monitor = await this.monitorService.updateMonitor(
+        req.user!.id,
+        id,
+        req.body
+      );
 
       res.json(monitor);
     } catch (error: any) {
@@ -70,7 +77,7 @@ export class MonitorController {
         return res.status(400).json({ message: "Monitor id is required" });
       }
 
-      await this.monitorService.deleteMonitor(id);
+      await this.monitorService.deleteMonitor(req.user!.id, id);
       res.status(204).send();
     } catch (error) {
       next(error);
