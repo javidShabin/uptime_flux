@@ -1,4 +1,5 @@
 import { createContext, useEffect, useState } from "react";
+import { registerLogout } from "./auth.service";
 
 interface User {
   id: string;
@@ -11,6 +12,7 @@ interface AuthContextType {
   login: (token: string, user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,8 +20,8 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // 👈 KEY
 
-  // Restore session on refresh
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken");
     const storedUser = localStorage.getItem("user");
@@ -28,6 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
+
+    setLoading(false); // 👈 hydration finished
   }, []);
 
   function login(token: string, user: User) {
@@ -44,6 +48,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
+  useEffect(() => {
+    registerLogout(logout);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -52,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         isAuthenticated: Boolean(token),
+        loading, // 👈 expose loading
       }}
     >
       {children}

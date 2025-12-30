@@ -5,11 +5,13 @@ import Dashboard from "../pages/Dashboard";
 import NotFound from "../pages/NotFound";
 import DashboardLayout from "../layouts/DashboardLayout";
 import RequireAuth from "../auth/RequireAuth";
+import PublicOnly from "../auth/PublicOnly";
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
+      <Route element={<PublicOnly />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
