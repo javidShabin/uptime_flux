@@ -16,7 +16,7 @@ export function createServer() {
   app.use(helmet());
   app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:5173", "http://192.168.1.7:5173"],
     credentials: true,
   })
 );

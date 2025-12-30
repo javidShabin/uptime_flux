@@ -94,6 +94,9 @@ importers:
 
   apps/web:
     dependencies:
+      axios:
+        specifier: ^1.13.2
+        version: 1.13.2
       react:
         specifier: ^19.2.0
         version: 19.2.3

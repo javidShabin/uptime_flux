@@ -34,6 +34,6 @@ export class AuthController {
     });
 
     // Return user data with token (for immediate client-side use)
-    res.json({ data: user });
+    res.json({ user });
   }
 }
