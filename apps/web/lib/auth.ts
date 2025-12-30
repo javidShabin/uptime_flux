@@ -1,5 +1,19 @@
-import { cookies } from "next/headers";
+export type AuthUser = {
+  id: string;
+  email: string;
+  token: string;
+};
 
-export function isAuthenticated() {
-  return !!cookies().get("accessToken")?.value;
+let authUser: AuthUser | null = null;
+
+export function setAuthUser(user: AuthUser) {
+  authUser = user;
+}
+
+export function getAuthUser() {
+  return authUser;
+}
+
+export function clearAuthUser() {
+  authUser = null;
 }

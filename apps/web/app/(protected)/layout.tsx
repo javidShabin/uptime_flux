@@ -1,14 +1,25 @@
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "../../lib/auth";
+import { cookies } from "next/headers";
+import Navbar from "@/components/Navbar";
 
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  if (!isAuthenticated()) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("accessToken");
+
+  if (!token) {
     redirect("/login");
   }
 
-  return <>{children}</>;
+  // For now, pass null to Navbar since we don't have user email from token
+  // The middleware already protects the route, so we know user is authenticated
+  return (
+    <>
+      <Navbar user={null} />
+      <main style={{ padding: 20 }}>{children}</main>
+    </>
+  );
 }

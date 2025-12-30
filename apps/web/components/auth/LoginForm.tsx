@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
+import { setAuthUser } from "../../lib/auth";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -15,13 +16,18 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      await apiFetch("/auth/login", {
+      const res = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
+      setAuthUser({
+        id: res.data.id,
+        email: res.data.email,
+        token: res.data.token,
+      });
+
       router.push("/dashboard");
-      router.refresh(); // 🔄 re-evaluate server auth
     } catch (err: any) {
       alert(err.message);
     } finally {
