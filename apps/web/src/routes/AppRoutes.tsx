@@ -4,6 +4,7 @@ import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import NotFound from "../pages/NotFound";
 import DashboardLayout from "../layouts/DashboardLayout";
+import RequireAuth from "../auth/RequireAuth";
 
 export default function AppRoutes() {
   return (
@@ -12,11 +13,13 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Dashboard layout */}
-      <Route element={<DashboardLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/monitors" element={<div>Monitors</div>} />
-        <Route path="/incidents" element={<div>Incidents</div>} />
+      {/* Protected */}
+      <Route element={<RequireAuth />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/monitors" element={<div>Monitors</div>} />
+          <Route path="/incidents" element={<div>Incidents</div>} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound />} />
