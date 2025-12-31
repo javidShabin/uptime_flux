@@ -11,11 +11,14 @@ const router = Router();
 const monitorService = new MonitorService();
 const monitorController = new MonitorController(monitorService);
 
+router.use(requireAuth);
+
+
 /**
  * POST /monitors
  * Create a new monitor
  */
-router.post("/create", requireAuth, validate(createMonitorSchema), monitorController.create);
+router.post("/create", validate(createMonitorSchema), monitorController.create);
 
 /**
  * GET /monitors

@@ -26,6 +26,9 @@ export class MonitorService {
     if (!url || !interval) {
       throw new Error("URL and interval are required");
     }
+ 
+
+
 
     // Check same url already is present or not
     const existingMonitor = await Monitor.findOne({ userId, url });

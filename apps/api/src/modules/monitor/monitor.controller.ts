@@ -20,6 +20,9 @@ export class MonitorController {
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { body } = req.validated as { body: CreateMonitorBody };
+         if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
       const monitor = await this.monitorService.createMonitor(
         req.user!.id,
         body
