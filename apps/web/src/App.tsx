@@ -1,11 +1,13 @@
-function App() {
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./auth/AuthContext";
+import AppRouter from "./router/AppRouter";
+
+export default function App() {
   return (
-    <>
-      <div className="text-red-500 text-3xl font-bold">
-        Tailwind is working 🎉
-      </div>
-    </>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;
