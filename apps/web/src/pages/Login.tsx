@@ -1,4 +1,5 @@
 import { useAuth } from "../auth/useAuth";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const { login } = useAuth();
@@ -6,10 +7,15 @@ export default function Login() {
   async function handleSubmit(e: any) {
     e.preventDefault();
     const form = e.target;
-    await login({
-      email: form.email.value,
-      password: form.password.value,
-    });
+    try {
+      await login({
+        email: form.email.value,
+        password: form.password.value,
+      });
+      toast.success("Login successful! Welcome back.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Login failed. Please try again.");
+    }
   }
 
   return (
