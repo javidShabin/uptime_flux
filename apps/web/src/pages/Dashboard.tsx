@@ -1,4 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface Monitor {
   _id: string;
@@ -17,6 +43,11 @@ interface Incident {
   resolvedAt?: string;
 }
 
+interface GraphDataPoint {
+  time: string;
+  value: number;
+}
+
 const Dashboard = () => {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -27,6 +58,39 @@ const Dashboard = () => {
     downMonitors: 0,
     openIncidents: 0,
   });
+
+  // Example graph data - Response Time over last 24 hours
+  const responseTimeData: GraphDataPoint[] = [
+    { time: '00:00', value: 120 },
+    { time: '04:00', value: 95 },
+    { time: '08:00', value: 150 },
+    { time: '12:00', value: 180 },
+    { time: '16:00', value: 140 },
+    { time: '20:00', value: 110 },
+    { time: '24:00', value: 125 },
+  ];
+
+  // Example graph data - Uptime percentage over last 7 days
+  const uptimeData: GraphDataPoint[] = [
+    { time: 'Mon', value: 99.8 },
+    { time: 'Tue', value: 99.9 },
+    { time: 'Wed', value: 99.5 },
+    { time: 'Thu', value: 100 },
+    { time: 'Fri', value: 99.7 },
+    { time: 'Sat', value: 99.9 },
+    { time: 'Sun', value: 100 },
+  ];
+
+  // Example graph data - Incidents per day
+  const incidentsData: GraphDataPoint[] = [
+    { time: 'Mon', value: 2 },
+    { time: 'Tue', value: 0 },
+    { time: 'Wed', value: 3 },
+    { time: 'Thu', value: 0 },
+    { time: 'Fri', value: 1 },
+    { time: 'Sat', value: 0 },
+    { time: 'Sun', value: 0 },
+  ];
 
   useEffect(() => {
     fetchDashboardData();
@@ -41,8 +105,8 @@ const Dashboard = () => {
       };
 
       const [monitorsRes, incidentsRes] = await Promise.all([
-        fetch('http://localhost:4000/api/v1/monitors/get', { headers }),
-        fetch('http://localhost:4000/api/v1/incidents?limit=5', { headers }),
+        fetch('http://localhost:3000/api/v1/monitors/get', { headers }),
+        fetch('http://localhost:3000/api/v1/incidents?limit=5', { headers }),
       ]);
 
       if (monitorsRes.ok) {
@@ -210,6 +274,249 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Graphs Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Response Time Graph */}
+          <div className="rounded-xl border border-white/15 bg-white/5 p-4 sm:p-6 backdrop-blur">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white">Response Time (24h)</h2>
+              <span className="text-xs text-white/60">Last 24 hours</span>
+            </div>
+            <div className="h-48">
+              <Line
+                data={{
+                  labels: responseTimeData.map(d => d.time),
+                  datasets: [
+                    {
+                      label: 'Response Time (ms)',
+                      data: responseTimeData.map(d => d.value),
+                      borderColor: '#ef4444',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      fill: true,
+                      tension: 0.4,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                      pointBackgroundColor: '#ef4444',
+                      pointBorderColor: '#ffffff',
+                      pointBorderWidth: 2,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      titleColor: '#ffffff',
+                      bodyColor: '#ffffff',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      borderWidth: 1,
+                      padding: 12,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: {
+                          size: 11,
+                        },
+                      },
+                      grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                      },
+                    },
+                    y: {
+                      ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: {
+                          size: 11,
+                        },
+                        callback: function(value) {
+                          return value + 'ms';
+                        },
+                      },
+                      grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs text-white/50">
+              <span>Min: {Math.min(...responseTimeData.map(d => d.value))}ms</span>
+              <span>Max: {Math.max(...responseTimeData.map(d => d.value))}ms</span>
+              <span>Avg: {Math.round(responseTimeData.reduce((sum, d) => sum + d.value, 0) / responseTimeData.length)}ms</span>
+            </div>
+          </div>
+
+          {/* Uptime Graph */}
+          <div className="rounded-xl border border-white/15 bg-white/5 p-4 sm:p-6 backdrop-blur">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white">Uptime (7d)</h2>
+              <span className="text-xs text-white/60">Last 7 days</span>
+            </div>
+            <div className="h-48">
+              <Line
+                data={{
+                  labels: uptimeData.map(d => d.time),
+                  datasets: [
+                    {
+                      label: 'Uptime (%)',
+                      data: uptimeData.map(d => d.value),
+                      borderColor: '#10b981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      fill: true,
+                      tension: 0.4,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                      pointBackgroundColor: '#10b981',
+                      pointBorderColor: '#ffffff',
+                      pointBorderWidth: 2,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      titleColor: '#ffffff',
+                      bodyColor: '#ffffff',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      borderWidth: 1,
+                      padding: 12,
+                      callbacks: {
+                        label: function(context) {
+                          return (context.parsed.y || 0).toFixed(1) + '%';
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: {
+                          size: 11,
+                        },
+                      },
+                      grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                      },
+                    },
+                    y: {
+                      min: 99,
+                      max: 100.5,
+                      ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        font: {
+                          size: 11,
+                        },
+                        callback: function(value) {
+                          return value + '%';
+                        },
+                      },
+                      grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs text-white/50">
+              <span>Min: {Math.min(...uptimeData.map(d => d.value)).toFixed(1)}%</span>
+              <span>Max: {Math.max(...uptimeData.map(d => d.value)).toFixed(1)}%</span>
+              <span>Avg: {(uptimeData.reduce((sum, d) => sum + d.value, 0) / uptimeData.length).toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Incidents Graph */}
+        <div className="rounded-xl border border-white/15 bg-white/5 p-4 sm:p-6 backdrop-blur">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white">Incidents (7d)</h2>
+            <span className="text-xs text-white/60">Last 7 days</span>
+          </div>
+          <div className="h-48">
+            <Bar
+              data={{
+                labels: incidentsData.map(d => d.time),
+                datasets: [
+                  {
+                    label: 'Incidents',
+                    data: incidentsData.map(d => d.value),
+                    backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                    borderColor: '#f97316',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                  tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: {
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      font: {
+                        size: 11,
+                      },
+                    },
+                    grid: {
+                      color: 'rgba(255, 255, 255, 0.05)',
+                      display: false,
+                    },
+                  },
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      font: {
+                        size: 11,
+                      },
+                      stepSize: 1,
+                    },
+                    grid: {
+                      color: 'rgba(255, 255, 255, 0.05)',
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-between text-xs text-white/50">
+            <span>Total: {incidentsData.reduce((sum, d) => sum + d.value, 0)} incidents</span>
+            <span>Peak: {Math.max(...incidentsData.map(d => d.value))} incidents</span>
+            <span>Days with incidents: {incidentsData.filter(d => d.value > 0).length}</span>
           </div>
         </div>
       </div>

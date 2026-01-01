@@ -40,7 +40,7 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <Dashboard />
+            <Dashboard />
             </DashboardLayout>
           </ProtectedRoute>
         }
