@@ -15,6 +15,7 @@ export interface MonitorDocument extends Document {
   isActive: boolean;
   lastStatus: MonitorStatus;
   lastCheckedAt: Date | null;
+  expectedStatusCodes: number[]; // HTTP status codes that indicate the monitor is UP
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +57,11 @@ const monitorSchema = new Schema<MonitorDocument>(
     lastCheckedAt: {
       type: Date,
       default: null,
+    },
+
+    expectedStatusCodes: {
+      type: [Number],
+      default: [200, 301, 302], // Default: 200 OK, 301/302 redirects
     },
   },
   {

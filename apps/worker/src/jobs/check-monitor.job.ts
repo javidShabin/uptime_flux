@@ -26,11 +26,24 @@ export async function checkMonitorJob(job: Job<{ monitorId: string }>) {
   try {
     const response = await axios.get(monitor.url, {
       timeout: 10_000,
-      validateStatus: () => true,
+      validateStatus: () => true, // Allow all status codes; we validate manually below
     });
 
-    currentStatus = response.status < 500 ? "UP" : "DOWN";
+    // Status-code-based validation:
+    // Even if the HTTP request succeeds (no network/DNS/timeout errors),
+    // we must check if the response status code is in the expected list.
+    // This prevents misleading UP states for scenarios like:
+    // - Vercel DEPLOYMENT_NOT_FOUND (404) - service is down but HTTP connection succeeded
+    // - Other error pages that return HTTP 200 but indicate the service is unavailable
+    // Only mark UP if the response status is in the monitor's expectedStatusCodes list.
+    const expectedCodes = monitor.expectedStatusCodes || [200, 301, 302];
+    if (expectedCodes.includes(response.status)) {
+      currentStatus = "UP";
+    } else {
+      currentStatus = "DOWN";
+    }
   } catch (error) {
+    // Network errors, timeouts, DNS failures: mark as DOWN
     currentStatus = "DOWN";
   }
 
