@@ -1,4 +1,3 @@
-import Header from "../components/landing/Header";
 import Hero from "../components/landing/Hero";
 import Problem from "../components/landing/Problem";
 import Features from "../components/landing/Features";
@@ -15,12 +14,8 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-gray-900">
-      <Header />
-
-      <main className="">
-        <Hero />
-      </main>
-    </div>
+    <>
+      <Hero />
+    </>
   );
 }
