@@ -7,6 +7,7 @@ import { ProtectedRoute } from "../auth/ProtectedRoute";
 import Landing from "../pages/Landing";
 import PublicLayout from "../components/layout/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
+import Incidents from "../pages/dashboard/Incidents";
 
 export default function AppRouter() {
   return (
@@ -43,6 +44,7 @@ export default function AppRouter() {
         <Route element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="monitors" element={<Monitors />} />
+          <Route path="incidents" element={<Incidents />} />
         </Route>
       </Route>
     </Routes>

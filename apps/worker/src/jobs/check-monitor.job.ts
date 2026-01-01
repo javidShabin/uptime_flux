@@ -62,7 +62,11 @@ export async function checkMonitorJob(job: Job<{ monitorId: string }>) {
 // ================================
   // Persist monitor state
   // ================================
-  monitor.lastStatus = currentStatus;
-  monitor.lastCheckedAt = new Date();
-  await monitor.save();
+  await Monitor.updateOne(
+    { _id: monitorId },
+    {
+      lastStatus: currentStatus,
+      lastCheckedAt: new Date(),
+    }
+  );
 }
