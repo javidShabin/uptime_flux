@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useAuth } from "../auth/useAuth";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 type LoginFormValues = {
   email: string;
@@ -9,7 +9,12 @@ type LoginFormValues = {
 };
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const {
     register,
@@ -21,6 +26,7 @@ export default function Login() {
     try {
       await login(data);
       toast.success("Welcome back 👋");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || "Invalid email or password"

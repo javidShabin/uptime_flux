@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useAuth } from "../auth/useAuth";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 type RegisterFormValues = {
   email: string;
@@ -9,7 +9,12 @@ type RegisterFormValues = {
 };
 
 export default function Register() {
-  const { register: signup } = useAuth();
+  const { register: signup, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const {
     register,
@@ -21,6 +26,7 @@ export default function Register() {
     try {
       await signup(data);
       toast.success("Account created successfully 🎉");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || "Signup failed. Please try again."

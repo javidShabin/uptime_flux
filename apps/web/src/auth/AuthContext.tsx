@@ -26,7 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(data: any) {
     const res = await authApi.login(data);
-    setToken(res.token);
+    setToken(res.user.token);
+   
     setUser(res.user);
   }
 
