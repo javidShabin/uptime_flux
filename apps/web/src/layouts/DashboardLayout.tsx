@@ -1,15 +1,19 @@
-import { ReactNode, useState } from "react";
+import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../components/dashboard/Sidebar";
 
-interface DashboardLayoutProps {
-  children: ReactNode;
-}
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const getPageTitle = () => {
+    if (location.pathname.includes('/monitors')) return 'Monitors';
+    if (location.pathname.includes('/incidents')) return 'Incidents';
+    return 'Dashboard';
   };
 
   return (
@@ -31,7 +35,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">{getPageTitle()}</h1>
               </div>
               <div className="flex items-center gap-2 sm:gap-4">
                 <button className="px-3 sm:px-4 py-2 rounded-lg border border-white/20 text-white/80 hover:text-white hover:border-white/40 transition-all duration-200 text-xs sm:text-sm">
@@ -43,7 +47,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6">{children}</main>
+        <main className="p-4 sm:p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

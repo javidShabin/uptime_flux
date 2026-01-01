@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
+import Monitors from "../pages/dashboard/Monitors";
 import { ProtectedRoute } from "../auth/ProtectedRoute";
 import Landing from "../pages/Landing";
 import PublicLayout from "../components/layout/PublicLayout";
@@ -37,14 +38,13 @@ export default function AppRouter() {
 
       <Route
         path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-            <Dashboard />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
+        element={<ProtectedRoute />}
+      >
+        <Route element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="monitors" element={<Monitors />} />
+        </Route>
+      </Route>
     </Routes>
   );
 }
