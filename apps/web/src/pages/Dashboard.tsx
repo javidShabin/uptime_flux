@@ -14,6 +14,8 @@ import {
 import ResponseTimeGraph from '../components/dashboard/ResponseTimeGraph';
 import UptimeGraph from '../components/dashboard/UptimeGraph';
 import IncidentsGraph from '../components/dashboard/IncidentsGraph';
+import { getDashboardSummary } from '../api/dashboard.api';
+import { getMonitors } from '../api/monitor.api';
 
 // Register Chart.js components
 ChartJS.register(
@@ -40,7 +42,7 @@ interface Monitor {
 interface Incident {
   _id: string;
   monitorId: string;
-  status: 'open' | 'resolved';
+  status: 'OPEN' | 'RESOLVED' | 'open' | 'resolved';
   startedAt: string;
   resolvedAt?: string;
 }
@@ -100,36 +102,26 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const [monitorsRes, incidentsRes] = await Promise.all([
-        fetch('http://localhost:3000/api/v1/monitors/get', { headers }),
-        fetch('http://localhost:3000/api/v1/incidents?limit=5', { headers }),
+      const [summaryData, monitorsData] = await Promise.all([
+        getDashboardSummary(),
+        getMonitors(),
       ]);
 
-      if (monitorsRes.ok) {
-        const monitorsData = await monitorsRes.json();
-        setMonitors(monitorsData || []);
-        setStats(prev => ({
-          ...prev,
-          totalMonitors: monitorsData?.length || 0,
-          activeMonitors: monitorsData?.filter((m: Monitor) => m.status === 'up')?.length || 0,
-          downMonitors: monitorsData?.filter((m: Monitor) => m.status === 'down')?.length || 0,
-        }));
+      // Handle dashboard summary response structure
+      const summary = summaryData?.data || summaryData;
+      if (summary) {
+        setStats({
+          totalMonitors: summary.totalMonitors || 0,
+          activeMonitors: summary.upMonitors || 0,
+          downMonitors: summary.downMonitors || 0,
+          openIncidents: summary.recentIncidents?.filter((i: Incident) => i.status === 'OPEN' || i.status === 'open')?.length || 0,
+        });
+        setIncidents(summary.recentIncidents || []);
       }
 
-      if (incidentsRes.ok) {
-        const incidentsData = await incidentsRes.json();
-        setIncidents(incidentsData?.data || []);
-        setStats(prev => ({
-          ...prev,
-          openIncidents: incidentsData?.data?.filter((i: Incident) => i.status === 'open')?.length || 0,
-        }));
-      }
+      // Handle monitors response structure
+      const monitorsArray = Array.isArray(monitorsData) ? monitorsData : monitorsData?.data || [];
+      setMonitors(monitorsArray);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -259,12 +251,12 @@ const Dashboard = () => {
                         <div className="flex items-center gap-2 mb-1">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
-                              incident.status === 'open'
+                              incident.status === 'OPEN' || incident.status === 'open'
                                 ? 'bg-red-500/20 text-red-400'
                                 : 'bg-green-500/20 text-green-400'
                             }`}
                           >
-                            {incident.status === 'open' ? 'Open' : 'Resolved'}
+                            {incident.status === 'OPEN' || incident.status === 'open' ? 'Open' : 'Resolved'}
                           </span>
                         </div>
                         <p className="text-xs sm:text-sm text-white/60">
