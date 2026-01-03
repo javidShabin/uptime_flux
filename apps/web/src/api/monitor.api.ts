@@ -21,3 +21,8 @@ export async function updateMonitor(
   const res = await api.patch(`/monitors/update/${monitorId}`, data)
   return res.data
 }
+
+export async function deleteMonitor(monitorId:string):Promise<any> {
+  const res = await api.delete(`/monitors/remove/${monitorId}`)
+  return res.data
+}

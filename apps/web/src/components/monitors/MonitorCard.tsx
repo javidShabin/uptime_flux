@@ -1,8 +1,25 @@
 import { useState } from "react";
 import EditMonitorModal from "./EditMonitorModal";
+import { deleteMonitor } from "../../api/monitor.api";
+import DeleteMonitorModal from "./DeleteMonitorModal";
 
 const MonitorCard = ({ monitor, refetch }: any) => {
   const [openEdit, setOpenEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+  try {
+    setDeleting(true);
+    await deleteMonitor(monitor._id);
+    setShowDelete(false);
+    refetch(); // refresh list
+  } catch (err) {
+    console.error("Delete failed", err);
+  } finally {
+    setDeleting(false);
+  }
+}
 
   const formatTime = (dateString: string | null) => {
     if (!dateString) return "Never";
@@ -73,6 +90,10 @@ const MonitorCard = ({ monitor, refetch }: any) => {
               </span>
             </div>
           </div>
+          <button onClick={() => setShowDelete(true)}
+            className="ml-4 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 whitespace-nowrap">
+              Delete
+            </button>
           <button
             onClick={() => setOpenEdit(true)}
             className="ml-4 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:scale-95 whitespace-nowrap"
@@ -132,6 +153,16 @@ const MonitorCard = ({ monitor, refetch }: any) => {
           onUpdated={refetch}
         />
       )}
+
+      {
+        showDelete && (
+          <DeleteMonitorModal
+          loading={deleting}
+          onCancel={() => setShowDelete(false)}
+          onConfirm={handleDelete}
+          />
+        )
+      }
     </>
   );
 };
