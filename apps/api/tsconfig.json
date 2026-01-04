@@ -4,7 +4,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": true,
-     "typeRoots": ["./src/types", "./node_modules/@types"]
+    "moduleResolution": "Node",
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "types": ["node"],
+    "lib": ["ES2021"]
   },
   "include": ["src"]
 }

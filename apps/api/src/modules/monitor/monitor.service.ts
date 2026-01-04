@@ -1,5 +1,9 @@
-import { Monitor } from "./monitor.model";
+import { Monitor } from "@uptimeflux/shared";
 import { AppError } from "../../utils/app-error";
+<<<<<<< HEAD
+=======
+import { scheduleMonitorJob } from "../../queues/monitor.queue";
+>>>>>>> dev
 
 /**
  * MonitorService
@@ -18,29 +22,41 @@ export class MonitorService {
   // =================================
   // Create monitor
   // =================================
-  async createMonitor(data: { url: string; interval: number }) {
+  async createMonitor(userId: string, data: { url: string; interval: number }) {
     // Destructer the url and interval from data
     const { url, interval } = data;
 
+    if (!url || !interval) {
+      throw new Error("URL and interval are required");
+    }
+ 
+
+
+
     // Check same url already is present or not
-    const existingMonitor = await Monitor.findOne({ url });
+    const existingMonitor = await Monitor.findOne({ userId, url });
     if (existingMonitor) {
       throw new AppError("Monitor with this URL already exists", 409);
     }
 
     // Create and return monitor
-    return Monitor.create({
+    const monitor = await Monitor.create({
+      userId,
       url: data.url,
       interval: data.interval,
     });
+
+    await scheduleMonitorJob(monitor._id.toString(), monitor.interval);
+
+    return monitor;
   }
 
   // =================================
   // Get all monitors
   // =================================
-  async getAllMonitors() {
+  async getAllMonitors(userId: string) {
     // Get all monitors by last add first method
-    const allMonitors = await Monitor.find().sort({ createdAt: -1 });
+    const allMonitors = await Monitor.find({ userId }).sort({ createdAt: -1 });
 
     if (!allMonitors || allMonitors.length == 0) {
       throw new AppError("Monitors not exists", 404);
@@ -54,6 +70,7 @@ export class MonitorService {
   // Update monitor
   // =================================
   async updateMonitor(
+    userId: string,
     monitorId: string,
     data: Partial<{
       url: string;
@@ -61,9 +78,11 @@ export class MonitorService {
       isActive: boolean;
     }>
   ) {
-    const monitor = await Monitor.findByIdAndUpdate(monitorId, data, {
-      new: true,
-    });
+    const monitor = await Monitor.findOneAndUpdate(
+      { _id: monitorId, userId },
+      data,
+      { new: true }
+    );
 
     // Check any monitor is available with the monitorId
     if (!monitor) {
@@ -71,6 +90,22 @@ export class MonitorService {
     }
 
     // Return monitor
+    return monitor;
+  }
+
+  // =================================
+  // Delete monitor
+  // =================================
+  async deleteMonitor(userId: string, monitorId: string) {
+    const monitor = await Monitor.findOneAndDelete({
+      _id: monitorId,
+      userId,
+    });
+
+    if (!monitor) {
+      throw new AppError("Monitor not found", 404);
+    }
+
     return monitor;
   }
 }
