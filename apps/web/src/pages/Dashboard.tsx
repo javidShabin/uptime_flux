@@ -34,7 +34,7 @@ interface Monitor {
   _id: string;
   name: string;
   url: string;
-  status: 'up' | 'down';
+  lastStatus: 'UP' | 'DOWN';
   lastChecked?: string;
   uptime?: number;
 }
@@ -63,6 +63,8 @@ const Dashboard = () => {
     downMonitors: 0,
     openIncidents: 0,
   });
+
+  console.log(monitors, "==monitor data")
 
   // State for graph data
   const [responseTimeData, setResponseTimeData] = useState<GraphDataPoint[]>([]);
@@ -184,8 +186,8 @@ const Dashboard = () => {
                 </button>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-3">
-                {monitors.slice(0, 5).map((monitor) => (
+              <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto">
+                {monitors.slice(0, 3).map((monitor) => (
                   <div
                     key={monitor._id}
                     className="rounded-lg border border-white/10 bg-white/5 p-3 sm:p-4 hover:border-white/20 transition-all duration-200"
@@ -198,12 +200,12 @@ const Dashboard = () => {
                       <div className="flex items-center sm:ml-4">
                         <span
                           className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                            monitor.status === 'up'
+                            monitor.lastStatus === 'UP'
                               ? 'bg-green-500/20 text-green-400'
                               : 'bg-red-500/20 text-red-400'
                           }`}
                         >
-                          {monitor.status === 'up' ? 'Up' : 'Down'}
+                          {monitor.lastStatus === 'UP' ? 'UP' : 'DOWN'}
                         </span>
                       </div>
                     </div>
@@ -223,8 +225,8 @@ const Dashboard = () => {
                 <p>No incidents yet</p>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-3">
-                {incidents.map((incident) => (
+              <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto">
+                {incidents.slice(0, 3).map((incident) => (
                   <div
                     key={incident._id}
                     className="rounded-lg border border-white/10 bg-white/5 p-3 sm:p-4 hover:border-white/20 transition-all duration-200"
