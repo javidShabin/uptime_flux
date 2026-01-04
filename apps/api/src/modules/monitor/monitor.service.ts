@@ -24,7 +24,7 @@ export class MonitorService {
     const { url, interval } = data;
 
     if (!url || !interval) {
-      throw new Error("URL and interval are required");
+      throw new AppError("URL and interval are required", 400);
     }
  
 
