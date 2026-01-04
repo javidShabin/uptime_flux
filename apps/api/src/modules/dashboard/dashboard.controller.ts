@@ -8,4 +8,9 @@ export class DashboardController {
     const data = await this.service.getSummary(req.user!.id);
     res.json({ data });
   };
+
+  getGraphSummary = async (req: Request, res: Response) => {
+    const data = await this.service.getDashboardGraphSummary(req.user!.id);
+    res.json({ data });
+  };
 }

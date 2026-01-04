@@ -14,7 +14,7 @@ import {
 import ResponseTimeGraph from '../components/dashboard/ResponseTimeGraph';
 import UptimeGraph from '../components/dashboard/UptimeGraph';
 import IncidentsGraph from '../components/dashboard/IncidentsGraph';
-import { getDashboardSummary } from '../api/dashboard.api';
+import { getDashboardSummary, getDashboardGraphSummary } from '../api/dashboard.api';
 import { getMonitors } from '../api/monitor.api';
 
 // Register Chart.js components
@@ -56,6 +56,7 @@ const Dashboard = () => {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
+  const [graphLoading, setGraphLoading] = useState(true);
   const [stats, setStats] = useState({
     totalMonitors: 0,
     activeMonitors: 0,
@@ -63,38 +64,10 @@ const Dashboard = () => {
     openIncidents: 0,
   });
 
-  // Example graph data - Response Time over last 24 hours
-  const responseTimeData: GraphDataPoint[] = [
-    { time: '00:00', value: 120 },
-    { time: '04:00', value: 95 },
-    { time: '08:00', value: 150 },
-    { time: '12:00', value: 180 },
-    { time: '16:00', value: 140 },
-    { time: '20:00', value: 110 },
-    { time: '24:00', value: 125 },
-  ];
-
-  // Example graph data - Uptime percentage over last 7 days
-  const uptimeData: GraphDataPoint[] = [
-    { time: 'Mon', value: 99.8 },
-    { time: 'Tue', value: 99.9 },
-    { time: 'Wed', value: 99.5 },
-    { time: 'Thu', value: 100 },
-    { time: 'Fri', value: 99.7 },
-    { time: 'Sat', value: 99.9 },
-    { time: 'Sun', value: 100 },
-  ];
-
-  // Example graph data - Incidents per day
-  const incidentsData: GraphDataPoint[] = [
-    { time: 'Mon', value: 2 },
-    { time: 'Tue', value: 0 },
-    { time: 'Wed', value: 3 },
-    { time: 'Thu', value: 0 },
-    { time: 'Fri', value: 1 },
-    { time: 'Sat', value: 0 },
-    { time: 'Sun', value: 0 },
-  ];
+  // State for graph data
+  const [responseTimeData, setResponseTimeData] = useState<GraphDataPoint[]>([]);
+  const [uptimeData, setUptimeData] = useState<GraphDataPoint[]>([]);
+  const [incidentsData, setIncidentsData] = useState<GraphDataPoint[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -102,9 +75,10 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [summaryData, monitorsData] = await Promise.all([
+      const [summaryData, monitorsData, graphData] = await Promise.all([
         getDashboardSummary(),
         getMonitors(),
+        getDashboardGraphSummary(),
       ]);
 
       // Handle dashboard summary response structure
@@ -119,6 +93,14 @@ const Dashboard = () => {
         setIncidents(summary.recentIncidents || []);
       }
 
+      // Handle graph data response structure
+      const graphSummary = graphData?.data || graphData;
+      if (graphSummary) {
+        setResponseTimeData(graphSummary.responseTime || []);
+        setUptimeData(graphSummary.uptime || []);
+        setIncidentsData(graphSummary.incidents || []);
+      }
+
       // Handle monitors response structure
       const monitorsArray = Array.isArray(monitorsData) ? monitorsData : monitorsData?.data || [];
       setMonitors(monitorsArray);
@@ -126,6 +108,7 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+      setGraphLoading(false);
     }
   };
 
@@ -273,12 +256,26 @@ const Dashboard = () => {
 
         {/* Graphs Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <ResponseTimeGraph data={responseTimeData} />
-          <UptimeGraph data={uptimeData} />
+          {graphLoading ? (
+            <div className="rounded-xl border border-white/15 bg-white/5 p-6 text-white/60 text-center col-span-2">
+              Loading graph data...
+            </div>
+          ) : (
+            <>
+              <ResponseTimeGraph data={responseTimeData} />
+              <UptimeGraph data={uptimeData} />
+            </>
+          )}
         </div>
 
         {/* Incidents Graph */}
-        <IncidentsGraph data={incidentsData} />
+        {graphLoading ? (
+          <div className="rounded-xl border border-white/15 bg-white/5 p-6 text-white/60 text-center">
+            Loading incidents data...
+          </div>
+        ) : (
+          <IncidentsGraph data={incidentsData} />
+        )}
       </div>
   );
 };

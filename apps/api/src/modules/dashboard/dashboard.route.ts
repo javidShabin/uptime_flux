@@ -6,5 +6,6 @@ const router = Router();
 const controller = new DashboardController();
 
 router.get("/summary", requireAuth, controller.getSummary);
+router.get("/graph-summary", requireAuth, controller.getGraphSummary);
 
 export const dashboardRouter = router;
