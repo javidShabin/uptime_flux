@@ -1,9 +1,6 @@
 import { Monitor } from "@uptimeflux/shared";
 import { AppError } from "../../utils/app-error";
-<<<<<<< HEAD
-=======
 import { scheduleMonitorJob } from "../../queues/monitor.queue";
->>>>>>> dev
 
 /**
  * MonitorService
