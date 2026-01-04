@@ -3,12 +3,16 @@ import { MonitorController } from "./monitor.controller";
 import { MonitorService } from "./monitor.service";
 import { validate } from "../../validation/validate";
 import { createMonitorSchema, updateMonitorSchema } from "./monitor.validation";
+import { requireAuth } from "../auth/auth.middleware";
 
 const router = Router();
 
 // Initialize service and controller
 const monitorService = new MonitorService();
 const monitorController = new MonitorController(monitorService);
+
+router.use(requireAuth);
+
 
 /**
  * POST /monitors
@@ -31,5 +35,11 @@ router.patch(
   validate(updateMonitorSchema),
   monitorController.update
 );
+
+/**
+ * DELETE /monitors
+ * Delete monitor
+ */
+router.delete("/remove/:id", monitorController.delete);
 
 export const monitorRouter = router;
