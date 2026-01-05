@@ -25,7 +25,7 @@ export class IncidentService {
   // Resolve incident (DOWN → UP)
   // ================================
   async resolveIncident(monitorId: string) {
-    return Incident.findByIdAndUpdate(
+    return Incident.findOneAndUpdate(
       { monitorId, status: "OPEN" },
       {
         status: "RESOLVED",
