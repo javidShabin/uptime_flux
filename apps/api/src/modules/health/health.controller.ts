@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { HealthQuery } from "./health.schema";
+import type { HealthQuery } from "./health.schema.js";
 
 export function healthCheck(req: Request, res: Response) {
   const { verbose } = (req.validated as HealthQuery).query;

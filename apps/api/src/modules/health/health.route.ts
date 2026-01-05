@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { validate } from "../../validation/validate";
-import { healthQuerySchema } from "./health.schema";
-import { healthCheck } from "./health.controller";
+import { validate } from "../../validation/validate.js";
+import { healthQuerySchema } from "./health.schema.js";
+import { healthCheck } from "./health.controller.js";
 
 export const healthRouter = Router();
 
