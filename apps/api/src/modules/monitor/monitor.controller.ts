@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { MonitorService } from "./monitor.service.js";
-import type { CreateMonitorBody } from "./monitor.validation.js";
+import { MonitorService } from "./monitor.service";
+import type { CreateMonitorBody } from "./monitor.validation";
 
 /**
  * MonitorController

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { validate } from "../validation/validate.js";
+import { validate } from "../validation/validate";
 
 export const healthRouter = Router();
 

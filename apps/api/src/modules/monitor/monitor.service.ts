@@ -1,6 +1,6 @@
 import { Monitor } from "@uptimeflux/shared";
 import { AppError } from "../../utils/app-error.js";
-import { scheduleMonitorJob } from "../../queues/monitor.queue.js";
+import { scheduleMonitorJob } from "../../queues/monitor.queue";
 
 /**
  * MonitorService

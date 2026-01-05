@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { env } from "../config/env.js";
+import { env } from "../config/env";
 
 /**
  * Monitor Queue
