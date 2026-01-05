@@ -1,5 +1,5 @@
 import { Schema, model, Document } from "mongoose";
-import type { IncidentStatus } from "./incident.types";
+import type { IncidentStatus } from "./incident.types.js";
 
 /**
  * Incident MongoDB document

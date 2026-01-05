@@ -1,5 +1,5 @@
-import type { AlertPayload } from "./alert.types";
-import { emailTransporter } from "./email";
+import type { AlertPayload } from "./alert.types.js";
+import { emailTransporter } from "./email.js";
 /**
  * AlertService
  *

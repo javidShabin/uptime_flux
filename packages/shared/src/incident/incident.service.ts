@@ -1,4 +1,4 @@
-import { Incident } from "./incident.model";
+import { Incident } from "./incident.model.js";
 
 /**
  * IncidentService
