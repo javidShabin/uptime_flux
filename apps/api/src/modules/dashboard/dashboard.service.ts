@@ -14,6 +14,18 @@ interface LeanIncident {
   resolvedAt?: Date;
 }
 
+/* ===============================
+   Type predicate (CRITICAL)
+   This is the real fix for TS2532
+================================ */
+type IncidentWithStart = LeanIncident & { startedAt: Date };
+
+function hasStartedAt(
+  incident: LeanIncident
+): incident is IncidentWithStart {
+  return incident.startedAt instanceof Date;
+}
+
 export class DashboardService {
   /* ===============================
      Dashboard summary
@@ -69,14 +81,17 @@ export class DashboardService {
 
     const monitorIds = monitors.map(m => String(m._id));
 
-    const incidents = await Incident.find({
-      monitorId: { $in: monitorIds },
-    })
-      .select("startedAt resolvedAt")
-      .lean<LeanIncident[]>();
+    // ⬇️ CRITICAL: narrow incidents ONCE using type predicate
+    const incidents = (
+      await Incident.find({
+        monitorId: { $in: monitorIds },
+      })
+        .select("startedAt resolvedAt")
+        .lean<LeanIncident[]>()
+    ).filter(hasStartedAt);
 
     return {
-      responseTime: this.generateResponseTimeData(monitors, incidents),
+      responseTime: this.generateResponseTimeData(),
       uptime: this.generateUptimeData(incidents),
       incidents: this.generateIncidentsData(incidents),
     };
@@ -86,10 +101,7 @@ export class DashboardService {
      Helpers
   ================================ */
 
-  private generateResponseTimeData(
-    _monitors: LeanMonitor[],
-    incidents: LeanIncident[]
-  ): { time: string; value: number }[] {
+  private generateResponseTimeData(): { time: string; value: number }[] {
     const data: { time: string; value: number }[] = [];
     const now = new Date();
 
@@ -99,7 +111,7 @@ export class DashboardService {
 
       let value = Math.floor(Math.random() * 450) + 50;
 
-      if (incidents.length > 0 && Math.random() > 0.7) {
+      if (Math.random() > 0.7) {
         value = Math.floor(Math.random() * 1000) + 500;
       }
 
@@ -113,7 +125,7 @@ export class DashboardService {
   }
 
   private generateUptimeData(
-    incidents: LeanIncident[]
+    incidents: IncidentWithStart[]
   ): { time: string; value: number }[] {
     const data: { time: string; value: number }[] = [];
     const now = new Date();
@@ -134,8 +146,7 @@ export class DashboardService {
       );
 
       const incidentsForDay = incidents.filter(incident => {
-        if (!incident.startedAt) return false;
-        const d = new Date(incident.startedAt);
+        const d = incident.startedAt;
         return d >= dayStart && d < dayEnd;
       });
 
@@ -154,7 +165,7 @@ export class DashboardService {
   }
 
   private generateIncidentsData(
-    incidents: LeanIncident[]
+    incidents: IncidentWithStart[]
   ): { time: string; value: number }[] {
     const data: { time: string; value: number }[] = [];
     const now = new Date();
@@ -175,8 +186,7 @@ export class DashboardService {
       );
 
       const count = incidents.filter(incident => {
-        if (!incident.startedAt) return false;
-        const d = new Date(incident.startedAt);
+        const d = incident.startedAt;
         return d >= dayStart && d < dayEnd;
       }).length;
 
