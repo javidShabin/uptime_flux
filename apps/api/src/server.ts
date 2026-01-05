@@ -4,10 +4,11 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 
-import { healthRouter } from "./modules/health/health.route";
-import { v1Router } from "./routes/router";
-import { notFound } from "./middlewares/notFound.middleware";
-import { errorHandler } from "./middlewares/error.middleware";
+import { healthRouter } from "./modules/health/health.route.js";
+import { v1Router } from "./routes/router.js";
+import { notFound } from "./middlewares/notFound.middleware.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
+
 
 export function createServer() {
   const app = express();
