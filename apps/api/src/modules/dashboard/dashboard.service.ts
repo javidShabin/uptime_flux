@@ -1,53 +1,48 @@
 import { Monitor, Incident } from "@uptimeflux/shared";
 
+/* ===============================
+   Lean document types
+================================ */
+interface LeanMonitor {
+  _id: string;
+  lastStatus?: "UP" | "DOWN";
+  createdAt?: Date;
+}
+
+interface LeanIncident {
+  startedAt?: Date;
+  resolvedAt?: Date;
+}
+
 export class DashboardService {
-  // ===============================
-  // Get monitor summer by user id
-  // ================================
+  /* ===============================
+     Dashboard summary
+  ================================ */
   async getSummary(userId: string) {
-    // Monitor owned by user
     const monitors = await Monitor.find(
       { userId },
       { _id: 1, lastStatus: 1 }
-    ).lean();
+    ).lean<LeanMonitor[]>();
 
-    /**
-     * Filtering Monitors
-     * total monitors
-     * total UP / DOWN montors
-     * Find uptime percentage
-     */
-    // Get total monitors count
     const totalMonitors = monitors.length;
+    const upMonitors = monitors.filter(m => m.lastStatus === "UP").length;
+    const downMonitors = monitors.filter(m => m.lastStatus === "DOWN").length;
 
-    // Get total of UP status monitors
-    const upMonitors = monitors.filter((m) => m.lastStatus === "UP").length;
-
-    // Get total of DOWN status monitors
-    const downMonitors = monitors.filter((m) => m.lastStatus === "DOWN").length;
-
-    // Uptime percentage
     const uptimePercentage =
       totalMonitors === 0
         ? 100
         : Math.round((upMonitors / totalMonitors) * 100);
 
-    // Get the all monitors ID's
-    const monitorIds: string[] = monitors.map((m) => String(m._id));
-
-    /**
-     * Get All recent incidents
-     * Get by monitor id's
-     */
+    const monitorIds = monitors.map(m => String(m._id));
 
     const recentIncidents = await Incident.find({
       monitorId: { $in: monitorIds },
     })
       .sort({ startedAt: -1 })
       .limit(5)
-      .lean();
+      .lean<LeanIncident[]>();
 
-      return {
+    return {
       totalMonitors,
       upMonitors,
       downMonitors,
@@ -56,130 +51,141 @@ export class DashboardService {
     };
   }
 
-  // ===============================
-  // Get dashboard graph summary
-  // ================================
+  /* ===============================
+     Dashboard graphs
+  ================================ */
   async getDashboardGraphSummary(userId: string) {
-    // Get all monitors for the user
-    const monitors = await Monitor.find({ userId }).select("_id lastStatus createdAt").lean();
-    
+    const monitors = await Monitor.find({ userId })
+      .select("_id lastStatus createdAt")
+      .lean<LeanMonitor[]>();
+
     if (monitors.length === 0) {
       return {
         responseTime: [],
         uptime: [],
-        incidents: []
+        incidents: [],
       };
     }
-    
+
     const monitorIds = monitors.map(m => String(m._id));
-    
-    // Get incidents for the user's monitors
+
     const incidents = await Incident.find({
-      monitorId: { $in: monitorIds }
-    }).select("startedAt resolvedAt").lean();
-    
-    // Generate response time data
-    // Since we don't have historical response time data, we'll simulate it based on monitor status changes
-    const responseTimeData = this.generateResponseTimeData(monitors, incidents);
-    
-    // Generate uptime data
-    // Since we don't have historical uptime data, we'll simulate it
-    const uptimeData = this.generateUptimeData(monitors, incidents);
-    
-    // Generate incidents data - count incidents per day
-    const incidentsData = this.generateIncidentsData(incidents);
-    
+      monitorId: { $in: monitorIds },
+    })
+      .select("startedAt resolvedAt")
+      .lean<LeanIncident[]>();
+
     return {
-      responseTime: responseTimeData,
-      uptime: uptimeData,
-      incidents: incidentsData
+      responseTime: this.generateResponseTimeData(monitors, incidents),
+      uptime: this.generateUptimeData(incidents),
+      incidents: this.generateIncidentsData(incidents),
     };
   }
 
-  private generateResponseTimeData(monitors: any[], incidents: any[]): { time: string; value: number }[] {
-    // Generate mock response time data for the last 24 hours
-    const data = [];
+  /* ===============================
+     Helpers
+  ================================ */
+
+  private generateResponseTimeData(
+    _monitors: LeanMonitor[],
+    incidents: LeanIncident[]
+  ): { time: string; value: number }[] {
+    const data: { time: string; value: number }[] = [];
     const now = new Date();
-    
+
     for (let i = 24; i >= 0; i--) {
       const time = new Date(now);
       time.setHours(time.getHours() - i);
-      
-      // Simulate response time between 50ms and 500ms, with occasional spikes
+
       let value = Math.floor(Math.random() * 450) + 50;
-      
-      // Add occasional spikes based on incidents
+
       if (incidents.length > 0 && Math.random() > 0.7) {
-        value = Math.floor(Math.random() * 1000) + 500; // Spike between 500-1500ms
+        value = Math.floor(Math.random() * 1000) + 500;
       }
-      
+
       data.push({
-        time: time.toISOString().split('T')[1].substring(0, 5), // Format as HH:MM
-        value: value
+        time: time.toISOString().substring(11, 16),
+        value,
       });
     }
-    
+
     return data;
   }
 
-  private generateUptimeData(monitors: any[], incidents: any[]): { time: string; value: number }[] {
-    // Generate mock uptime data for the last 7 days
-    const data = [];
+  private generateUptimeData(
+    incidents: LeanIncident[]
+  ): { time: string; value: number }[] {
+    const data: { time: string; value: number }[] = [];
     const now = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
-      
-      // Calculate uptime percentage based on incidents
-      let uptime = 100;
-      
-      // If there were incidents on this day, reduce uptime
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-      
+
+      const dayStart = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      );
+      const dayEnd = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() + 1
+      );
+
       const incidentsForDay = incidents.filter(incident => {
-        const incidentDate = new Date(incident.startedAt);
-        return incidentDate >= dayStart && incidentDate < dayEnd;
+        if (!incident.startedAt) return false;
+        const d = new Date(incident.startedAt);
+        return d >= dayStart && d < dayEnd;
       });
-      
-      // Reduce uptime based on number of incidents
-      if (incidentsForDay.length > 0) {
-        uptime = Math.max(90, 100 - (incidentsForDay.length * 2));
-      }
-      
+
+      const uptime =
+        incidentsForDay.length === 0
+          ? 100
+          : Math.max(90, 100 - incidentsForDay.length * 2);
+
       data.push({
-        time: date.toLocaleDateString('en-US', { weekday: 'short' }), // Format as Mon, Tue, etc.
-        value: uptime
+        time: date.toLocaleDateString("en-US", { weekday: "short" }),
+        value: uptime,
       });
     }
-    
+
     return data;
   }
 
-  private generateIncidentsData(incidents: any[]): { time: string; value: number }[] {
-    // Generate incidents count per day for the last 7 days
-    const data = [];
+  private generateIncidentsData(
+    incidents: LeanIncident[]
+  ): { time: string; value: number }[] {
+    const data: { time: string; value: number }[] = [];
     const now = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
-      
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-      
-      const incidentsForDay = incidents.filter(incident => {
-        const incidentDate = new Date(incident.startedAt);
-        return incidentDate >= dayStart && incidentDate < dayEnd;
-      });
-      
+
+      const dayStart = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      );
+      const dayEnd = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() + 1
+      );
+
+      const count = incidents.filter(incident => {
+        if (!incident.startedAt) return false;
+        const d = new Date(incident.startedAt);
+        return d >= dayStart && d < dayEnd;
+      }).length;
+
       data.push({
-        time: date.toLocaleDateString('en-US', { weekday: 'short' }), // Format as Mon, Tue, etc.
-        value: incidentsForDay.length
+        time: date.toLocaleDateString("en-US", { weekday: "short" }),
+        value: count,
       });
     }
-    
+
     return data;
   }
 }
