@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { monitorRouter } from "../modules/monitor/monitor.route";
-import { incidentRouter } from "../modules/incident/incident.route";
-import { authRouter } from "../modules/auth/auth.route";
-import { dashboardRouter } from "../modules/dashboard/dashboard.route";
+import { monitorRouter } from "../modules/monitor/monitor.route.js";
+import { incidentRouter } from "../modules/incident/incident.route.js";
+import { authRouter } from "../modules/auth/auth.route.js";
+import { dashboardRouter } from "../modules/dashboard/dashboard.route.js";
 
 const v1Router = Router();
 

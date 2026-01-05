@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { User } from "@uptimeflux/shared";
-import { signJwt } from "../../utils/jwt";
-import type { RegisterInput, LoginInput } from "./auth.types";
+import { signJwt } from "../../utils/jwt.js";
+import type { RegisterInput, LoginInput } from "./auth.types.js";
 
 /**
  * AuthService
