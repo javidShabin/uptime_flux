@@ -19,5 +19,6 @@ export const env = {
   REDIS_URL: requireEnv("REDIS_URL"),
 
   JWT_SECRET: requireEnv("JWT_SECRET"),
-  JWT_EXPIRES_IN: requireEnv("JWT_EXPIRES_IN")
+  JWT_EXPIRES_IN: requireEnv("JWT_EXPIRES_IN"),
+  CORS_ORIGIN: process.env.CORS_ORIGIN || "",
 } as const;
