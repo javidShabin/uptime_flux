@@ -5,7 +5,7 @@
     "rootDir": "src",
     "noEmit": false,
     "moduleResolution": "Node16",
-    "module": "ESNext",
+    "module": "Node16",
     "target": "ES2022",
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "types": ["node"],
