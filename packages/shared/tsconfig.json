@@ -4,12 +4,8 @@
     "types": ["node"],
     "lib": ["ES2021"],
     "rootDir": ".",
-    "outDir": "dist",
-    "moduleResolution": "Node16",
-    "module": "Node16",
-    "declaration": true,
-    "declarationMap": true
+    "outDir": "dist"
   },
-  "include": ["**/*.ts"],
+  "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
 }

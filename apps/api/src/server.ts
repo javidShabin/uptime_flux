@@ -16,11 +16,11 @@ export function createServer() {
   // Core middleware
   app.use(helmet());
   app.use(
-    cors({
-      origin: process.env.CORS_ORIGIN?.split(',') || ["http://localhost:5173"],
-      credentials: true,
-    })
-  );
+  cors({
+    origin: ["http://localhost:5173", "http://192.168.1.7:5173"],
+    credentials: true,
+  })
+);
 
   app.use(express.json());
   app.use(morgan("dev"));

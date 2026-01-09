@@ -1,7 +1,7 @@
-import { createServer } from "./server.js";
-import { env } from "./config/env.js";
-import { connectMongo, disconnectMongo } from "./config/mongo.js";
-import { closeRedis, connectRedis } from "./config/redis.js";
+import { createServer } from "./server";
+import { env } from "./config/env";
+import { connectMongo, disconnectMongo } from "./config/mongo";
+import { closeRedis, connectRedis } from "./config/redis";
 
 async function bootstrap() {
   // 1️⃣ Connect infrastructure first

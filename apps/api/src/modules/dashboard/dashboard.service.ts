@@ -37,15 +37,15 @@ export class DashboardService {
     ).lean<LeanMonitor[]>();
 
     const totalMonitors = monitors.length;
-    const upMonitors = monitors.filter((m: LeanMonitor) => m.lastStatus === "UP").length;
-    const downMonitors = monitors.filter((m: LeanMonitor) => m.lastStatus === "DOWN").length;
+    const upMonitors = monitors.filter(m => m.lastStatus === "UP").length;
+    const downMonitors = monitors.filter(m => m.lastStatus === "DOWN").length;
 
     const uptimePercentage =
       totalMonitors === 0
         ? 100
         : Math.round((upMonitors / totalMonitors) * 100);
 
-    const monitorIds = monitors.map((m: LeanMonitor) => String(m._id));
+    const monitorIds = monitors.map(m => String(m._id));
 
     const recentIncidents = await Incident.find({
       monitorId: { $in: monitorIds },
@@ -79,7 +79,7 @@ export class DashboardService {
       };
     }
 
-    const monitorIds = monitors.map((m: LeanMonitor) => String(m._id));
+    const monitorIds = monitors.map(m => String(m._id));
 
     // ⬇️ CRITICAL: narrow incidents ONCE using type predicate
     const incidents = (
