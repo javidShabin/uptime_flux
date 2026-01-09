@@ -6,7 +6,9 @@
     "rootDir": ".",
     "outDir": "dist",
     "moduleResolution": "Node16",
-    "module": "Node16"
+    "module": "Node16",
+    "declaration": true,
+    "declarationMap": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
