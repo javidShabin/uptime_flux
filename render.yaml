@@ -2,7 +2,7 @@ services:
   - type: web
     name: uptimeflux-api
     env: node
-    buildCommand: pnpm install && pnpm --filter @uptimeflux/api build
+    buildCommand: pnpm install && pnpm --filter @uptimeflux/shared build && pnpm --filter @uptimeflux/api build
     startCommand: pnpm --filter @uptimeflux/api start
     envVars:
       - key: NODE_ENV
