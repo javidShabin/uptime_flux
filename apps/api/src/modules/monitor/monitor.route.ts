@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { MonitorController } from "./monitor.controller";
-import { MonitorService } from "./monitor.service";
-import { validate } from "../../validation/validate";
-import { createMonitorSchema, updateMonitorSchema } from "./monitor.validation";
-import { requireAuth } from "../auth/auth.middleware";
+import { MonitorController } from "./monitor.controller.js";
+import { MonitorService } from "./monitor.service.js";
+import { validate } from "../../validation/validate.js";
+import { createMonitorSchema, updateMonitorSchema } from "./monitor.validation.js";
+import { requireAuth } from "../auth/auth.middleware.js";
 
 const router = Router();
 

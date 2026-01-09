@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { IncidentController } from "./incident.controller";
+import { IncidentController } from "./incident.controller.js";
 
 const router = Router();
 const controller = new IncidentController();

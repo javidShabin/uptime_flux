@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
-import { AppError } from "../utils/app-error";
+import { AppError } from "../utils/app-error.js";
 
 export function errorHandler(
   err: unknown,
@@ -21,8 +21,9 @@ export function errorHandler(
 
   // Business / domain errors
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: err.message,
+    const appError = err as AppError;
+    return res.status(appError.statusCode).json({
+      error: appError.message,
     });
   }
 
