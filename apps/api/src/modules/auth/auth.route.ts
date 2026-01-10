@@ -6,6 +6,7 @@ const controller = new AuthController();
 
 // Auth routes
 router.post("/register", controller.register.bind(controller));
+router.post("/verify-email", controller.verifyEmail.bind(controller))
 router.post("/login", controller.login.bind(controller));
 
 export const authRouter = router;
