@@ -1,15 +1,15 @@
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 import { useAuth } from "../auth/useAuth";
+import toast from "react-hot-toast";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 
-type RegisterFormValues = {
+type OtpFormValues = {
   email: string;
-  password: string;
+  otp: string;
 };
 
-export default function Register() {
-  const { register: signup, isAuthenticated } = useAuth();
+export default function Otp() {
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   if (isAuthenticated) {
@@ -20,17 +20,16 @@ export default function Register() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterFormValues>();
+  } = useForm<OtpFormValues>();
 
-  async function onSubmit(data: RegisterFormValues) {
+  async function onSubmit(data: OtpFormValues) {
     try {
-      const res = await signup(data);
-      console.log(res, "===signup data")
-      // toast.success("Account created successfully 🎉");
-      // navigate("/dashboard");
+      await login(data);
+      toast.success("Welcome back 👋");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(
-        error?.response?.data?.message || "Signup failed. Please try again."
+        error?.response?.data?.message || "Invalid email or password"
       );
     }
   }
@@ -41,10 +40,10 @@ export default function Register() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-white">
-            Create your UptimeFlux account
+            Sign in to UptimeFlux
           </h1>
           <p className="mt-2 text-sm text-white/60">
-            Start monitoring your services in minutes
+            Monitor uptime. Detect incidents. Stay ahead.
           </p>
         </div>
 
@@ -79,14 +78,10 @@ export default function Register() {
           <div>
             <label className="block text-sm text-white/70 mb-1">Password</label>
             <input
-              type="password"
-              placeholder="Create a strong password"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 8,
-                  message: "Password must be at least 8 characters",
-                },
+              type="text"
+              placeholder="••••••••"
+              {...register("otp", {
+                required: "OTP is required",
               })}
               className="
                 w-full rounded-lg border border-white/10
@@ -95,9 +90,9 @@ export default function Register() {
                 focus:outline-none focus:ring-2 focus:ring-red-500/50
               "
             />
-            {errors.password && (
+            {errors.otp && (
               <p className="mt-1 text-xs text-red-400">
-                {errors.password.message}
+                {errors.otp.message}
               </p>
             )}
           </div>
@@ -113,13 +108,13 @@ export default function Register() {
               shadow-[0_0_30px_rgba(239,68,68,0.45)]
             "
           >
-            {isSubmitting ? "Creating account..." : "Create Account"}
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-white/60">
-          Already have an account? <Link to={"/login"} className="text-red-500">Sign in</Link>
+          Don’t have an account? <Link to={"/register"} className="text-red-500">Create one</Link>
         </div>
       </div>
     </div>

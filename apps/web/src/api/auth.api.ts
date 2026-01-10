@@ -14,3 +14,8 @@ export async function register(data: {
   const res = await api.post("/auth/register", data);
   return res.data;
 }
+
+export async function verifyEmail(data: { email: string; otp: string }) {
+  const res = await api.post("/auth/verify-email", data);
+  return res.data;
+}
