@@ -18,12 +18,20 @@ export class AuthController {
     res.status(201).json({ data: user });
   }
 
+  // ===============================
+  // Verify Email
+  // ===============================
+  async verifyEmail(req: Request, res: Response) {
+    const result = await this.authService.verifyEmail(req.body);
+    res.json({ data: result });
+  }
+
   // ==============================
   // Login
   // ==============================
   async login(req: Request, res: Response) {
     const user = await this.authService.login(req.body);
-    
+
     // Set the access token as an HTTP-only cookie
     res.cookie("accessToken", user.token, {
       httpOnly: true,
