@@ -2,6 +2,8 @@ export * from "./monitor/index.js";
 export * from "./incident/index.js";
 export * from "./alert/index.js";
 export * from "./user/index.js";
+export * from "./otp/otp";
+export * from "./otp/otpEmail";
 
 // Explicit re-exports for better TypeScript resolution
 export { User } from "./user/user.model.js";

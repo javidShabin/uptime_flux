@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
-import { User } from "@uptimeflux/shared";
+import { User, generateOTP, sendOtpEmail } from "@uptimeflux/shared";
 import { signJwt } from "../../utils/jwt.js";
-import type { RegisterInput, LoginInput } from "./auth.types.js";
+import type { RegisterInput, LoginInput, VerifyEmailInput } from "./auth.types.js";
+import crypto from "crypto";
 
 /**
  * AuthService
@@ -36,17 +37,50 @@ export class AuthService {
     // Hash user passowrd with salt rounds
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
 
+    const { otp, hash, expire } = generateOTP();
+
     // Create new user
     const user = await User.create({
       email,
       passwordHash,
+      emailOTPHash: hash,
+      emailOTPExpiresAt: new Date(expire),
+      isEmailVerified: false,
     });
+
+    await sendOtpEmail(email, otp);
 
     // If complete the user creation return the user
     return {
       id: user._id.toString(),
       email: user.email,
+      needsVerification: true,
       createdAt: user.createdAt,
+    };
+  }
+
+  async verifyEmail(input: VerifyEmailInput) {
+    const { email, otp } = input;
+    const hash = crypto.createHash("sha256").update(otp).digest("hex");
+
+    const user = await User.findOne({
+      email,
+      emailOTPHash: hash,
+      emailOTPExpiresAt: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw new Error("Invalid OTP or OTP expired");
+    }
+
+    user.isEmailVerified = true;
+    user.emailOTPHash = undefined;
+    user.emailOTPExpiresAt = undefined;
+
+    await user.save();
+
+    return {
+      verified: true,
     };
   }
 
@@ -74,14 +108,14 @@ export class AuthService {
     }
 
     const token = signJwt({
-      userId: user._id.toString()
-    })
+      userId: user._id.toString(),
+    });
 
     return {
       id: user._id.toString(),
       email: user.email,
       createdAt: user.createdAt,
-      token
+      token,
     };
   }
 }

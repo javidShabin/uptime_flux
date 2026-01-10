@@ -8,6 +8,9 @@ export interface UserDocument extends Document {
   passwordHash: string;
   createdAt: Date;
   updatedAt: Date;
+  isEmailVerified?: boolean;
+  emailOTPHash?: string;
+  emailOTPExpiresAt?: Date;
 }
 
 /**
@@ -27,6 +30,12 @@ const userSchema = new Schema<UserDocument>(
       type: String,
       required: true,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailOTPHash: { type: String },
+    emailOTPExpiresAt: { type: Date },
   },
   {
     timestamps: true,
