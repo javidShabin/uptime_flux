@@ -66,7 +66,7 @@ export class AuthService {
     const { email, otp } = input;
     const hash = crypto.createHash("sha256").update(otp).digest("hex");
 
-    const user= await User.findOne({
+    const user = await User.findOne({
       email,
       emailOTPHash: hash,
       emailOTPExpiresAt: { $gt: new Date() },
@@ -82,11 +82,22 @@ export class AuthService {
 
     await user.save();
 
+    // Generate token for authenticated user after successful email verification
+    const token = signJwt({
+      userId: user._id.toString(),
+    });
+
     const SUCCESS_MESSAGE = "Email verified successfully.";
 
     return {
       verified: true,
       SUCCESS_MESSAGE,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        isEmailVerified: user.isEmailVerified,
+        token,
+      },
     };
     
   }

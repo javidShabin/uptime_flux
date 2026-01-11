@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../auth/useAuth";
+import { setToken } from "../utils/token";
 import toast from "react-hot-toast";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 
@@ -9,7 +11,7 @@ type OtpFormValues = {
 };
 
 export default function Otp() {
-  const { login, isAuthenticated } = useAuth();
+  const { verifyEmail, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   if (isAuthenticated) {
@@ -20,16 +22,36 @@ export default function Otp() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setValue,
   } = useForm<OtpFormValues>();
+
+  // Set the email from localStorage when component mounts
+  useEffect(() => {
+    const signupEmail = localStorage.getItem('signupEmail');
+    if (signupEmail) {
+      setValue('email', signupEmail);
+    }
+  }, [setValue]);
 
   async function onSubmit(data: OtpFormValues) {
     try {
-      await login(data);
-      toast.success("Welcome back 👋");
-      navigate("/dashboard");
+      const result = await verifyEmail(data);
+      toast.success(result.SUCCESS_MESSAGE);
+      // Clear the stored email after successful verification
+      localStorage.removeItem('signupEmail');
+      // If the result contains user data with a token, set it in auth context
+      if (result.data.user) {
+        // Set token and user data
+        setToken(result.data.user.token);
+        // Redirect to dashboard since user is now authenticated
+        navigate('/dashboard');
+      } else {
+        // Fallback to login if no token is returned
+        navigate('/login');
+      }
     } catch (error: any) {
       toast.error(
-        error?.response?.data?.message || "Invalid email or password"
+        error?.response?.data?.message || "Invalid OTP"
       );
     }
   }
@@ -40,10 +62,10 @@ export default function Otp() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-white">
-            Sign in to UptimeFlux
+            Verify Your Email
           </h1>
           <p className="mt-2 text-sm text-white/60">
-            Monitor uptime. Detect incidents. Stay ahead.
+            Enter the OTP sent to your email address
           </p>
         </div>
 
@@ -76,7 +98,7 @@ export default function Otp() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm text-white/70 mb-1">OTP</label>
+            <label className="block text-sm text-white/70 mb-1">One-Time Password (OTP)</label>
             <input
               type="text"
               placeholder="••••••••"
@@ -108,13 +130,13 @@ export default function Otp() {
               shadow-[0_0_30px_rgba(239,68,68,0.45)]
             "
           >
-            {isSubmitting ? "Signing in..." : "Sign In"}
+            {isSubmitting ? "Verifying..." : "Verify Email"}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-white/60">
-          Can't get otp? <Link to={"/register"} className="text-red-500">Resent otp</Link>
+          Need to register? <Link to={"/register"} className="text-red-500">Create an account</Link>
         </div>
       </div>
     </div>

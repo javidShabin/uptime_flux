@@ -6,6 +6,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 type RegisterFormValues = {
   email: string;
   password: string;
+  OTP_MESSAGE: string;
 };
 
 export default function Register() {
@@ -25,8 +26,11 @@ export default function Register() {
   async function onSubmit(data: RegisterFormValues) {
     try {
 
-      await signup(data);
-      toast.success("Account created successfully 🎉");
+      const result = await signup(data);
+      console.log(result, "===result")
+      // Store the email in localStorage to pre-fill in OTP page
+      localStorage.setItem("signupEmail", data.email);
+      toast.success(result?.OTP_MESSAGE);
       navigate("/otp");
     } catch (error: any) {
       toast.error(

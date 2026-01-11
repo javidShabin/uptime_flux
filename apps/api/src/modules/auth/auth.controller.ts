@@ -27,6 +27,18 @@ export class AuthController {
   // ===============================
   async verifyEmail(req: Request, res: Response) {
     const result = await this.authService.verifyEmail(req.body);
+    
+    // If user is returned with a token, set it as an HTTP-only cookie
+    if (result.user && result.user.token) {
+      res.cookie("accessToken", result.user.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+      });
+    }
+    
     res.json({ data: result });
   }
 
@@ -52,5 +64,17 @@ export class AuthController {
     } catch (error) {
       res.status(401).json({ message: (error as Error).message });
     }
+  }
+
+  // ==============================
+  // Logout
+  // ==============================
+  async logout(req: Request, res: Response) {
+    // Clear the access token cookie
+    res.clearCookie("accessToken", {
+      path: "/",
+    });
+    
+    res.json({ message: "Logged out successfully" });
   }
 }
