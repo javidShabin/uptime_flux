@@ -76,7 +76,7 @@ export default function Otp() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm text-white/70 mb-1">Password</label>
+            <label className="block text-sm text-white/70 mb-1">OTP</label>
             <input
               type="text"
               placeholder="••••••••"
@@ -114,7 +114,7 @@ export default function Otp() {
 
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-white/60">
-          Don’t have an account? <Link to={"/register"} className="text-red-500">Create one</Link>
+          Can't get otp? <Link to={"/register"} className="text-red-500">Resent otp</Link>
         </div>
       </div>
     </div>

@@ -8,9 +8,9 @@ export interface UserDocument extends Document {
   passwordHash: string;
   createdAt: Date;
   updatedAt: Date;
-  isEmailVerified?: boolean;
-  emailOTPHash?: string;
-  emailOTPExpiresAt?: Date;
+  isEmailVerified: boolean;
+  emailOTPHash: string;
+  emailOTPExpiresAt: Date;
 }
 
 /**

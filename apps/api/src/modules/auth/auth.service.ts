@@ -29,7 +29,7 @@ export class AuthService {
     }
 
     // Check any user is exise with same email
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, isEmailVerified: true });
     if (existingUser) {
       throw new Error("Email already registered");
     }
@@ -38,6 +38,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
 
     const { otp, hash, expire } = generateOTP();
+    console.log(otp, hash, expire, "otp details");
 
     // Create new user
     const user = await User.create({
@@ -50,20 +51,22 @@ export class AuthService {
 
     await sendOtpEmail(email, otp);
 
+    const OTP_MESSAGE = "An OTP has been sent to your email for verification."; 
+
     // If complete the user creation return the user
     return {
       id: user._id.toString(),
       email: user.email,
-      needsVerification: true,
-      createdAt: user.createdAt,
-    };
+      needsEmailVerification: true,
+      OTP_MESSAGE,
+    }
   }
 
   async verifyEmail(input: VerifyEmailInput) {
     const { email, otp } = input;
     const hash = crypto.createHash("sha256").update(otp).digest("hex");
 
-    const user = await User.findOne({
+    const user= await User.findOne({
       email,
       emailOTPHash: hash,
       emailOTPExpiresAt: { $gt: new Date() },
@@ -74,14 +77,18 @@ export class AuthService {
     }
 
     user.isEmailVerified = true;
-    user.emailOTPHash = undefined;
-    user.emailOTPExpiresAt = undefined;
+    user.emailOTPHash = "";
+    user.emailOTPExpiresAt = new Date();
 
     await user.save();
 
+    const SUCCESS_MESSAGE = "Email verified successfully.";
+
     return {
       verified: true,
+      SUCCESS_MESSAGE,
     };
+    
   }
 
   // ==============================

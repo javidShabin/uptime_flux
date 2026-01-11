@@ -1,7 +1,5 @@
 import nodemailer from "nodemailer";
 
-console.log("SMTP HOST =", process.env.SMTP_HOST);
-
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -14,9 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendOtpEmail(email: string, otp: string) {
-
-    console.log(email, otp)
-
+  
   try {
     await transporter.sendMail({
       from: `"UptimeFlux" <${process.env.SMTP_USER}>`,

@@ -24,10 +24,10 @@ export default function Register() {
 
   async function onSubmit(data: RegisterFormValues) {
     try {
-      const res = await signup(data);
-      console.log(res, "===signup data")
-      // toast.success("Account created successfully 🎉");
-      // navigate("/dashboard");
+
+      await signup(data);
+      toast.success("Account created successfully 🎉");
+      navigate("/otp");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || "Signup failed. Please try again."

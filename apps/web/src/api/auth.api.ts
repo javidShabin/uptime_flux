@@ -12,7 +12,7 @@ export async function register(data: {
   name: string;
 }) {
   const res = await api.post("/auth/register", data);
-  return res.data;
+  return res.data.data;
 }
 
 export async function verifyEmail(data: { email: string; otp: string }) {

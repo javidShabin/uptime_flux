@@ -33,8 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function register(data: any) {
     const res = await authApi.register(data);
-    setToken(res.token);
-    setUser(res.user);
+    setUser(res);
   }
 
   function logout() {

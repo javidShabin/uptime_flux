@@ -8,6 +8,7 @@ import Landing from "../pages/Landing";
 import PublicLayout from "../components/layout/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Incidents from "../pages/dashboard/Incidents";
+import Otp from "../pages/Otp";
 
 export default function AppRouter() {
   return (
@@ -38,9 +39,15 @@ export default function AppRouter() {
       />
 
       <Route
-        path="/dashboard"
-        element={<ProtectedRoute />}
-      >
+        path="/otp"
+        element={
+          <PublicLayout>
+            <Otp />
+          </PublicLayout>
+        }
+      />
+
+      <Route path="/dashboard" element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="monitors" element={<Monitors />} />
