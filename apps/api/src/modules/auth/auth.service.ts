@@ -62,10 +62,15 @@ export class AuthService {
     }
   }
 
+  // ==============================
+  // Login
+  // ==============================
   async verifyEmail(input: VerifyEmailInput) {
     const { email, otp } = input;
+    // hash the otp using crypto
     const hash = crypto.createHash("sha256").update(otp).digest("hex");
 
+    // Find user by email and hashed OTP
     const user = await User.findOne({
       email,
       emailOTPHash: hash,
@@ -76,6 +81,7 @@ export class AuthService {
       throw new Error("Invalid OTP or OTP expired");
     }
 
+    // Update the emial and otp fields after verifying the otp
     user.isEmailVerified = true;
     user.emailOTPHash = "";
     user.emailOTPExpiresAt = new Date();
