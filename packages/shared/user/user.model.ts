@@ -13,6 +13,12 @@ export interface UserDocument extends Document {
   emailOTPExpiresAt: Date;
   emailOTPLastSentAt?: Date;
   emailOTPAttempts?: number;
+  googleId: string;
+  authProvider: {
+    type: string,
+    enum: ["local", "google"],
+    default: "local"
+  }
 }
 
 /**
@@ -40,6 +46,12 @@ const userSchema = new Schema<UserDocument>(
     emailOTPExpiresAt: { type: Date },
     emailOTPLastSentAt: { type: Date },
     emailOTPAttempts: { type: Number, default: 0 },
+    googleId: {type: String},
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+    default: "local"
+    }
   },
   {
     timestamps: true,
