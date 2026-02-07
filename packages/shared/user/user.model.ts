@@ -6,19 +6,10 @@ import { Schema, model, type Document } from "mongoose";
 export interface UserDocument extends Document {
   email: string;
   passwordHash: string;
+  name?: string;
   createdAt: Date;
   updatedAt: Date;
   isEmailVerified: boolean;
-  emailOTPHash: string;
-  emailOTPExpiresAt: Date;
-  emailOTPLastSentAt?: Date;
-  emailOTPAttempts?: number;
-  googleId: string;
-  authProvider: {
-    type: string,
-    enum: ["local", "google"],
-    default: "local"
-  }
 }
 
 /**
@@ -38,20 +29,14 @@ const userSchema = new Schema<UserDocument>(
       type: String,
       required: true,
     },
+    name: {
+      type: String,
+      required: false,
+    },
     isEmailVerified: {
       type: Boolean,
       default: false,
     },
-    emailOTPHash: { type: String },
-    emailOTPExpiresAt: { type: Date },
-    emailOTPLastSentAt: { type: Date },
-    emailOTPAttempts: { type: Number, default: 0 },
-    googleId: {type: String},
-    authProvider: {
-      type: String,
-      enum: ["local", "google"],
-    default: "local"
-    }
   },
   {
     timestamps: true,
