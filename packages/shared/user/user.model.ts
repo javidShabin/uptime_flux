@@ -10,6 +10,10 @@ export interface UserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   isEmailVerified: boolean;
+  emailOTPHash: string;
+  emailOTPExpiresAt: Date;
+  emailOTPLastSentAt?: Date;
+  emailOTPAttempts?: number;
 }
 
 /**
@@ -37,6 +41,10 @@ const userSchema = new Schema<UserDocument>(
       type: Boolean,
       default: false,
     },
+    emailOTPHash: { type: String },
+    emailOTPExpiresAt: { type: Date },
+    emailOTPLastSentAt: { type: Date },
+    emailOTPAttempts: { type: Number, default: 0 },
   },
   {
     timestamps: true,

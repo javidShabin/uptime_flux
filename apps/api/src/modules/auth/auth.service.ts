@@ -11,7 +11,6 @@ import crypto from "crypto";
  * - User registration
  * - User login
  *
- * No HTTP logic. No JWT yet.
  */
 
 export class AuthService {
