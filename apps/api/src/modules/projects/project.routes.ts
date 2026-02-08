@@ -1,12 +1,18 @@
 import { Router } from "express";
 import { ProjectController } from "./project.controller";
 import { requireAuth } from "../auth/auth.middleware";
+import { validate } from "../../validation/validate";
+import { createProjectSchema } from "./project.validation";
 
-const router = Router()
-const controller = new ProjectController()
+const router = Router();
+const controller = new ProjectController();
 
-router.use(requireAuth)
+router.use(requireAuth);
 
-router.post("/", controller.create)
+router.post(
+  "/",
+  validate(createProjectSchema),
+  controller.create.bind(controller),
+);
 
-export const projectRouter = router
+export const projectRouter = router;

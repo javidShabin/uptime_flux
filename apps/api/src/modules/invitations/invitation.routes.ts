@@ -1,12 +1,20 @@
 import { Router } from "express";
 import { InviatationController } from "./inviatation.controller";
 import { requireAuth } from "../auth/auth.middleware";
+import { requireRole } from "../rbac/requireRole";
+import { validate } from "../../validation/validate";
+import { inviteMemberSchema } from "./invitation.validation";
 
-const router = Router()
-const controller = new InviatationController()
+const router = Router();
+const controller = new InviatationController();
 
-router.use(requireAuth)
+router.use(requireAuth);
 
-router.post("/", controller.invite)
+router.post(
+  "/",
+  requireRole("ADMIN"),
+  validate(inviteMemberSchema),
+  controller.invite.bind(controller),
+);
 
-export const projectRouter = router
+export const projectRouter = router;
