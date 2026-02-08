@@ -4,6 +4,7 @@ import { incidentRouter } from "../modules/incident/incident.route.js";
 import { authRouter } from "../modules/auth/auth.route.js";
 import { dashboardRouter } from "../modules/dashboard/dashboard.route.js";
 import { projectRouter } from "../modules/projects/project.routes.js";
+import { invitationRouter } from "../modules/invitations/invitation.routes.js";
 
 const v1Router = Router();
 
@@ -16,5 +17,6 @@ v1Router.use("/incidents", incidentRouter);
 v1Router.use("/auth", authRouter);
 v1Router.use("/dashboard", dashboardRouter);
 v1Router.use("/project", projectRouter)
+v1Router.use("/invitation", invitationRouter)
 
 export { v1Router };

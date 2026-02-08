@@ -10,7 +10,7 @@ const controller = new ProjectController();
 router.use(requireAuth);
 
 router.post(
-  "/",
+  "/create",
   validate(createProjectSchema),
   controller.create.bind(controller),
 );

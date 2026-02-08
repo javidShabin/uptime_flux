@@ -11,10 +11,10 @@ const controller = new InviatationController();
 router.use(requireAuth);
 
 router.post(
-  "/",
+  "/:projectId/invite",
   requireRole("ADMIN"),
   validate(inviteMemberSchema),
   controller.invite.bind(controller),
 );
 
-export const projectRouter = router;
+export const invitationRouter = router;
