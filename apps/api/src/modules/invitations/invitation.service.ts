@@ -43,4 +43,9 @@ export class InviatationService {
 
     return invitation;
   }
+
+  // Accept invitation
+  async acceptInvitation(token:string, userId:string) {
+    
+  }
 }
