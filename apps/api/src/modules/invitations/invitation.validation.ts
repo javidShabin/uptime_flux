@@ -11,5 +11,12 @@ export const inviteMemberSchema = z.object({
   }),
 });
 
+export const acceptInvitationSchema = z.object({
+  body: z.object({
+    token: z.string().min(10),
+  }),
+});
+
+
 export type InviteMemberBody =
   z.infer<typeof inviteMemberSchema>["body"];

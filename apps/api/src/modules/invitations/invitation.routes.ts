@@ -3,7 +3,10 @@ import { InviatationController } from "./inviatation.controller";
 import { requireAuth } from "../auth/auth.middleware";
 import { requireRole } from "../rbac/requireRole";
 import { validate } from "../../validation/validate";
-import { inviteMemberSchema } from "./invitation.validation";
+import {
+  acceptInvitationSchema,
+  inviteMemberSchema,
+} from "./invitation.validation";
 
 const router = Router();
 const controller = new InviatationController();
@@ -15,6 +18,12 @@ router.post(
   requireRole("ADMIN"),
   validate(inviteMemberSchema),
   controller.invite.bind(controller),
+);
+
+router.post(
+  "/accept",
+  validate(acceptInvitationSchema),
+  controller.accept.bind(controller),
 );
 
 export const invitationRouter = router;

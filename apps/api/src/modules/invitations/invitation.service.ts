@@ -46,6 +46,24 @@ export class InviatationService {
 
   // Accept invitation
   async acceptInvitation(token:string, userId:string) {
-    
+    const invitation = await Invitation.findOne({token})
+
+    if(!invitation) throw new Error("Invalid invitation token");
+
+    if (invitation.acceptedAt) throw new Error("Invitation already accepted");
+
+    if (invitation.expiresAt < new Date()) throw new Error("Invitation expired");
+
+    // Check user already member
+    const existing = await Membership.findOne({
+      userId,
+      projectId: invitation.projectId,
+      role: invitation.role
+    })
+
+    invitation.acceptedAt = new Date()
+    await invitation.save()
+
+    return invitation.projectId
   }
 }
