@@ -14,5 +14,11 @@ export const createProjectSchema = z.object({
   }),
 });
 
+export const memberListSchema = z.object({
+  body: z.object({
+    projectId: z.string()
+  })
+})
+
 export type CreateProjectBody =
   z.infer<typeof createProjectSchema>["body"];
