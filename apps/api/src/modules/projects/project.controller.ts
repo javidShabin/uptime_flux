@@ -23,15 +23,5 @@ export class ProjectController {
     }
   }
 
-  // ===============================
-  // Member list
-  //================================
-  async memberList(req:Request, res:Response) {
-    try {
-      const memberList = await this.projectService.memberList(req.body)
-      res.status(200).json({data:memberList})
-    } catch (error) {
-      res.status(400).json({message: (error as Error).message})
-    }
-  }
+  
 }

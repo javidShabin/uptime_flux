@@ -16,11 +16,4 @@ router.post(
   controller.create.bind(controller),
 );
 
-router.get(
-  "/member-list",
-  requireRole('OWNER'),
-  validate(memberListSchema),
-  controller.memberList.bind(controller),
-);
-
 export const projectRouter = router;
