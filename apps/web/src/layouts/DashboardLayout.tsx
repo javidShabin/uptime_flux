@@ -38,6 +38,9 @@ export default function DashboardLayout() {
                 <h1 className="text-xl sm:text-2xl font-bold text-white">{getPageTitle()}</h1>
               </div>
               <div className="flex items-center gap-2 sm:gap-4">
+                <button className="bg-red-500 text-white px-3 py-2 rounded-lg border-white text-sm">
+                  Create Project
+                </button>
                 <button className="px-3 sm:px-4 py-2 rounded-lg border border-white/20 text-white/80 hover:text-white hover:border-white/40 transition-all duration-200 text-xs sm:text-sm">
                   Settings
                 </button>
