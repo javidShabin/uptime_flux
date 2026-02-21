@@ -10,3 +10,10 @@ export const memberListSchema = z.object({
     projectId: z.string()
   })
 })
+
+export const removeMember = z.object({
+  body: z.object({
+    userId: z.string(),
+    projectId: z.string()
+  })
+})

@@ -1,5 +1,5 @@
 import { Membership } from "../memberships/membership.model";
-import type { MemberList } from "./membership.types";
+import type { MemberList, removeMembers } from "./membership.types";
 
 /**
  * Membership service
@@ -27,5 +27,30 @@ export class MembershipService {
     if (!membersList) throw new Error("Not find members list");
 
     return membersList;
+  }
+
+  // =======================================
+  // Remove member
+  //=======================================
+  async removeMember(input: removeMembers) {
+    const { projectId, userId } = input;
+
+    if (!projectId || !userId) {
+      throw new Error("Project id and user id are required");
+    }
+
+    // Find and remove the member frome the project
+    const member = await Membership.findOneAndDelete({
+      projectId,
+      userId,
+    });
+
+    if (!member) {
+      throw new Error("Member not found in this project");
+    }
+
+    return {
+      message: "Member removed successfully",
+    };
   }
 }

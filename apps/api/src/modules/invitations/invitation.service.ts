@@ -33,6 +33,7 @@ export class InviatationService {
     });
 
     const inviteLink = `${process.env.APP_URL}/invite?token=${token}`;
+    console.log(inviteLink)
 
     await sendMail(
       email,
